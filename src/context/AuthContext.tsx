@@ -85,15 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signup = useCallback(
     async (name: string, email: string, password: string): Promise<boolean> => {
       try {
-        const data = await api.post<{ token: string; user: ApiUser }>("/auth/register", {
-          name,
-          email,
-          password,
-        });
-        setToken(data.token);
-        const authUser = toAuthUser(data.user);
-        setUser(authUser);
-        persist(authUser);
+        await api.post("/auth/register", { name, email, password });
         return true;
       } catch {
         return false;

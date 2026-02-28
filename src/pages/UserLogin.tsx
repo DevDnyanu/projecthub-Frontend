@@ -179,7 +179,10 @@ const UserLogin = () => {
     setLoading(true);
     const ok = await signup(name, email, password);
     if (ok) {
-      toast({ title: "Account created! 🚀", description: "Welcome to ProjectHub." });
+      toast({ title: "Account created!", description: "Please sign in with your credentials." });
+      setMode("login");
+      setName("");
+      setPassword("");
     } else {
       toast({ title: "Email already taken", description: "Try signing in instead.", variant: "destructive" });
     }
