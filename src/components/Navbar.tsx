@@ -1,0 +1,624 @@
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Bell, Plus, User, Menu, LogOut, ChevronDown,
+  Briefcase, FolderOpen, LayoutDashboard, Shield, Search, Users, BarChart3,
+  Gavel, Clock, CheckCircle2, CheckCircle, Flag,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useState, useEffect, useRef, useCallback } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
+import ProjectAlertsPanel from "@/components/ProjectAlertsPanel";
+import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+
+interface UserResult {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  rating: number;
+}
+
+// ── Category nav bar data ──────────────────────────────────────────────────
+// Uncomment each entry when you're ready to add it to the nav bar.
+const CATEGORY_NAV: { id: string; label: string; subcategories: string[] }[] = [
+  // { id: "personal-growth",  label: "Personal Growth",       subcategories: ["Life Coaching", "Career Coaching", "Fitness & Wellness"] },
+  // { id: "consulting",       label: "Consulting",            subcategories: ["Business Strategy", "Management Consulting", "IT Consulting"] },
+  // { id: "data",             label: "Data",                  subcategories: ["Data Analysis", "Data Engineering", "BI & Reporting"] },
+  // { id: "design",           label: "Graphics & Design",     subcategories: ["Logo Design", "Brand Identity", "Illustration", "Figma / Prototyping"] },
+  // { id: "prog-tech",         label: "Programming & Tech",    subcategories: ["Web Development", "Software Development"] },
+  // { id: "digital-marketing", label: "Digital Marketing",     subcategories: ["Paid Advertising", "Social Media Marketing"] },
+  // { id: "video",            label: "Video & Animation",     subcategories: ["Video Editing", "Explainer Videos", "Motion Graphics", "Reels & Short-form"] },
+  // { id: "writing",          label: "Writing & Translation", subcategories: ["Blog & Articles", "Copywriting", "Technical Writing", "Ghostwriting"] },
+  // { id: "finance",          label: "Finance & Accounting",  subcategories: ["Bookkeeping", "Financial Modelling", "Tax Consulting", "CFO Services"] },
+];
+
+const Navbar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isLoggedIn, logout } = useAuth();
+  const { toast } = useToast();
+
+  const [hoveredCat, setHoveredCat] = useState<string | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserResult[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Project Alerts panel
+  const [showAlertsPanel, setShowAlertsPanel] = useState(false);
+  const [alertsBadge, setAlertsBadge]         = useState(0);
+  const alertsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (alertsRef.current && !alertsRef.current.contains(e.target as Node))
+        setShowAlertsPanel(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Seed badge from localStorage on mount
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const lastSeen = localStorage.getItem("ph_alerts_last_seen");
+    if (!lastSeen) setAlertsBadge(1); // hint user to open
+  }, [isLoggedIn]);
+
+  // Notifications (admin + regular users)
+  type NotifType = "new_bid" | "new_project" | "bid_accepted" | "bid_rejected" | "bid_approved_admin" | "bid_rejected_admin";
+  interface AppNotif { _id: string; type: NotifType; message: string; read: boolean; createdAt: string; projectTitle: string; actorName: string; }
+  const [notifications, setNotifications]   = useState<AppNotif[]>([]);
+  const [unreadCount, setUnreadCount]       = useState(0);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!isLoggedIn) return;
+    try {
+      const endpoint = user?.is_admin ? "/admin/notifications" : "/notifications";
+      const data = await api.get<AppNotif[]>(endpoint);
+      setNotifications(data);
+      setUnreadCount(data.filter((n) => !n.read).length);
+    } catch { /* silently fail */ }
+  }, [isLoggedIn, user?.is_admin]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn, fetchNotifications]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifPanel(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleNotifClick = async (n: AppNotif) => {
+    setShowNotifPanel(false);
+    if (!n.read) {
+      const endpoint = user?.is_admin
+        ? `/admin/notifications/${n._id}/read`
+        : `/notifications/${n._id}/read`;
+      try { await api.patch(endpoint); fetchNotifications(); } catch { /* ignore */ }
+    }
+    if (user?.is_admin) {
+      navigate(n.type === "new_project" ? "/admin?tab=projects" : "/admin?tab=bids");
+    } else {
+      navigate("/my-projects");
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const endpoint = user?.is_admin ? "/admin/notifications/read-all" : "/notifications/read-all";
+    try { await api.patch(endpoint); fetchNotifications(); } catch { /* ignore */ }
+  };
+
+  // Derived notification stats
+  const newProjectsCount = notifications.filter((n) => n.type === "new_project" && !n.read).length;
+  const newBidsCount     = notifications.filter((n) => n.type === "new_bid" && !n.read).length;
+  const readCount        = notifications.filter((n) => n.read).length;
+  const unreadNotifs     = notifications.filter((n) => !n.read);
+
+  // Debounced user search
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      api.get<UserResult[]>(`/users/search?q=${encodeURIComponent(searchQuery.trim())}`)
+        .then((data) => { setSearchResults(data); setShowDropdown(true); })
+        .catch(() => {});
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleUserSelect = (id: string) => {
+    setSearchQuery("");
+    setShowDropdown(false);
+    navigate(`/users/${id}`);
+  };
+
+  const handleProtectedNav = (path: string) => {
+    if (!isLoggedIn) { navigate("/login"); }
+    else { navigate(path); setMobileOpen(false); }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+    toast({ title: "Signed out", description: "See you soon!" });
+  };
+
+  const navItems = [
+    { label: "Search",      path: "/",            icon: Search,    protected: false },
+    { label: "My Projects", path: "/my-projects", icon: FolderOpen, protected: true  },
+    { label: "Post Project",path: "/post-project",icon: Briefcase,  protected: true  },
+  ];
+
+  return (
+    <header className="sticky top-0 z-50 border-b bg-card/90 backdrop-blur-lg">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+            <span className="text-sm font-bold text-primary-foreground">P</span>
+          </div>
+          <span className="font-heading text-lg font-bold text-foreground hidden sm:block">
+            ProjectHub
+          </span>
+        </Link>
+
+        {/* User Search */}
+        <div className="relative hidden md:flex flex-1 max-w-md" ref={searchRef}>
+          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search users by name..."
+            className="pl-10 bg-secondary border-none"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+          />
+          {showDropdown && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-xl shadow-xl z-50 overflow-hidden">
+              {searchResults.length > 0 ? (
+                searchResults.map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => handleUserSelect(u.id)}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-secondary transition-colors text-left"
+                  >
+                    <Avatar className="h-7 w-7 shrink-0">
+                      <AvatarImage src={u.avatar} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                        {u.name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground truncate">{u.name}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-[10px] shrink-0 capitalize">
+                      {u.role}
+                    </Badge>
+                  </button>
+                ))
+              ) : (
+                <p className="px-4 py-3 text-sm text-muted-foreground">No users found</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Nav Links */}
+        <nav className="hidden md:flex items-center gap-1">
+          {navItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => item.protected ? handleProtectedNav(item.path) : navigate(item.path)}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors
+                ${location.pathname === item.path
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}
+            >
+              {item.label}
+            </button>
+          ))}
+          {isLoggedIn && (
+            <button
+              onClick={() => handleProtectedNav("/admin")}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors
+                ${location.pathname === "/admin"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}
+            >
+              {user?.is_admin
+                ? <><Shield className="h-3.5 w-3.5" />Admin Panel</>
+                : <><BarChart3 className="h-3.5 w-3.5" />Dashboard</>}
+            </button>
+          )}
+        </nav>
+
+        {/* Right actions */}
+        <div className="flex items-center gap-2">
+          <Button size="sm" className="gap-1.5 hidden md:flex" onClick={() => handleProtectedNav("/post-project")}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden lg:inline">New Project</span>
+          </Button>
+
+          <ThemeToggle />
+
+          {/* Project Alerts — logged-in users only */}
+          {isLoggedIn && (
+            <div className="relative" ref={alertsRef}>
+              <Button
+                variant="ghost" size="icon" className="relative"
+                onClick={() => {
+                  setShowAlertsPanel((p) => !p);
+                  setShowNotifPanel(false);
+                }}
+              >
+                <Flag className="h-4 w-4" />
+                {alertsBadge > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+                    {alertsBadge > 9 ? "9+" : alertsBadge}
+                  </span>
+                )}
+              </Button>
+
+              {showAlertsPanel && (
+                <ProjectAlertsPanel
+                  onNewCount={setAlertsBadge}
+                  onClose={() => setShowAlertsPanel(false)}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Notification bell — all logged-in users */}
+          {isLoggedIn && (
+            <div className="relative" ref={notifRef}>
+              <Button
+                variant="ghost" size="icon" className="relative"
+                onClick={() => { setShowNotifPanel((p) => !p); setShowAlertsPanel(false); }}
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              {showNotifPanel && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+
+                  {/* ── Header ── */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4 text-primary" />
+                      <p className="font-semibold text-sm text-foreground">Notifications</p>
+                    </div>
+                    <button
+                      onClick={() => { setShowNotifPanel(false); navigate(user?.is_admin ? "/admin?tab=bids" : "/my-projects"); }}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      All
+                    </button>
+                  </div>
+
+                  {/* ── Stats grid ── */}
+                  <div className="px-4 pt-3 pb-2">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                      {user?.is_admin ? "Activity Summary" : "My Activity"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Card 1 */}
+                      <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Clock className="h-3.5 w-3.5 text-blue-500" />
+                          <span className="text-[11px] text-muted-foreground">
+                            {user?.is_admin ? "New Projects" : "Bids Received"}
+                          </span>
+                        </div>
+                        <p className="text-xl font-bold text-foreground">{newProjectsCount}</p>
+                      </div>
+                      {/* Card 2 */}
+                      <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Clock className="h-3.5 w-3.5 text-yellow-500" />
+                          <span className="text-[11px] text-muted-foreground">
+                            {user?.is_admin ? "New Bids" : "Bid Updates"}
+                          </span>
+                        </div>
+                        <p className="text-xl font-bold text-foreground">{newBidsCount}</p>
+                      </div>
+                      {/* Card 3 */}
+                      <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                          <span className="text-[11px] text-muted-foreground">Read</span>
+                        </div>
+                        <p className="text-xl font-bold text-foreground">{readCount}</p>
+                      </div>
+                      {/* Card 4 */}
+                      <div className="rounded-lg border border-border bg-muted/20 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-[11px] text-muted-foreground">Total</span>
+                        </div>
+                        <p className="text-xl font-bold text-foreground">{notifications.length}</p>
+                      </div>
+                    </div>
+
+                    {/* Pending / Done summary */}
+                    <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/60">
+                      <span className="text-xs font-semibold text-orange-500">
+                        Pending: {unreadCount}
+                      </span>
+                      <span className="text-xs font-semibold text-green-500">
+                        Done: {readCount}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ── Notification list / empty state ── */}
+                  <div className="max-h-52 overflow-y-auto border-t border-border/60">
+                    {unreadNotifs.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center px-4 py-6 gap-2">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10 border-2 border-green-500/30">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">No new notifications</p>
+                      </div>
+                    ) : (
+                      unreadNotifs.map((n) => (
+                        <button
+                          key={n._id}
+                          onClick={() => handleNotifClick(n)}
+                          className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-secondary transition-colors bg-primary/5"
+                        >
+                          <div className="relative mt-0.5 shrink-0">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                              {n.type === "new_project"
+                                ? <FolderOpen className="h-3.5 w-3.5 text-primary" />
+                                : <Gavel className="h-3.5 w-3.5 text-primary" />}
+                            </div>
+                            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-foreground leading-snug">{n.message}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              {new Date(n.createdAt).toLocaleDateString("en-IN", {
+                                day: "numeric", month: "short",
+                                hour: "2-digit", minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+
+                  {/* ── Footer ── */}
+                  <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-muted/10">
+                    {unreadCount > 0 ? (
+                      <button onClick={handleMarkAllRead} className="text-xs text-primary hover:underline font-medium">
+                        Mark all read
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Up to date</span>
+                    )}
+                    <button
+                      onClick={() => { setShowNotifPanel(false); navigate(user?.is_admin ? "/admin" : "/my-projects"); }}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      {user?.is_admin ? "Admin Panel" : "My Projects"}
+                    </button>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          )}
+
+          {isLoggedIn ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                      {user?.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden lg:inline text-sm font-medium text-foreground">
+                    {user?.name?.split(" ")[0]}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">{user?.name}</p>
+                    {user?.is_admin && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                        <Shield className="h-2.5 w-2.5" /> Admin
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                {user?.is_admin && (
+                  <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+                    <LayoutDashboard className="h-4 w-4 mr-2" /> Admin Dashboard
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => navigate("/my-projects")} className="cursor-pointer">
+                  <FolderOpen className="h-4 w-4 mr-2" /> My Projects
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/post-project")} className="cursor-pointer">
+                  <Briefcase className="h-4 w-4 mr-2" /> Post a Project
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/login">
+              <Button size="sm" className="gap-1.5">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign In</span>
+              </Button>
+            </Link>
+          )}
+
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+            <Menu className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Category nav bar — only shown when logged in ── */}
+      {isLoggedIn && (
+      <div className="border-t border-border/60 bg-card/90 backdrop-blur-lg">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex items-center">
+            {CATEGORY_NAV.map((cat) => (
+              <div
+                key={cat.id}
+                className="relative shrink-0"
+                onMouseEnter={() => setHoveredCat(cat.id)}
+                onMouseLeave={() => setHoveredCat(null)}
+              >
+                <button
+                  onClick={() => isLoggedIn ? navigate("/") : navigate("/login")}
+                  className={`flex items-center gap-1 whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+                    hoveredCat === cat.id
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                  }`}
+                >
+                  {cat.label}
+                  <ChevronDown
+                    className={`h-3 w-3 transition-transform duration-200 ${hoveredCat === cat.id ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {hoveredCat === cat.id && (
+                  <>
+                    {/* Invisible bridge — prevents mouse gap between button and dropdown */}
+                    <div className="absolute left-0 top-[calc(100%-2px)] h-2 w-full z-50" />
+                    <div className="absolute left-0 top-full z-50 min-w-[180px] rounded-xl border border-border bg-card shadow-xl overflow-hidden">
+                      {cat.subcategories.map((sub) => (
+                        <button
+                          key={sub}
+                          onClick={() => { isLoggedIn ? navigate("/") : navigate("/login"); setHoveredCat(null); }}
+                          className="flex w-full items-center px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-left"
+                        >
+                          {sub}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      )} {/* end isLoggedIn category bar */}
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="border-t bg-card px-4 py-3 md:hidden">
+          <div className="relative mb-3">
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users..."
+              className="pl-10 bg-secondary border-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <nav className="flex flex-col gap-1">
+            {navItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => item.protected ? handleProtectedNav(item.path) : navigate(item.path)}
+                className={`flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors text-left
+                  ${location.pathname === item.path
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </button>
+            ))}
+            <button
+              onClick={() => handleProtectedNav("/post-project")}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium bg-primary text-primary-foreground mt-1"
+            >
+              <Plus className="h-4 w-4" />
+              New Project
+            </button>
+            {isLoggedIn && (
+              <button
+                onClick={() => { handleProtectedNav("/admin"); setMobileOpen(false); }}
+                className={`flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium mt-1 transition-colors
+                  ${location.pathname === "/admin"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}
+              >
+                {user?.is_admin
+                  ? <><Shield className="h-4 w-4" />Admin Panel</>
+                  : <><BarChart3 className="h-4 w-4" />Dashboard</>}
+              </button>
+            )}
+            {isLoggedIn && (
+              <button
+                onClick={() => { handleLogout(); setMobileOpen(false); }}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 mt-1 transition-colors"
+              >
+                <LogOut className="h-4 w-4" /> Sign Out
+              </button>
+            )}
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+};
+
+export default Navbar;
