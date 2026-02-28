@@ -22,10 +22,10 @@ const Footer = () => {
           {/* ── Brand ── */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Briefcase className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="font-heading text-xl font-bold text-foreground">ProjectHub</span>
+              <img src="/favicon.svg" alt="ProjectHub" className="h-9 w-9" />
+              <span className="font-heading text-xl font-bold">
+                <span className="text-foreground">Project</span><span className="text-primary">Hub</span>
+              </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               India's growing freelance marketplace connecting talented professionals with businesses that need them most.

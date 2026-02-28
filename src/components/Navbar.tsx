@@ -189,11 +189,9 @@ const Navbar = () => {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <span className="text-sm font-bold text-primary-foreground">P</span>
-          </div>
-          <span className="font-heading text-lg font-bold text-foreground hidden sm:block">
-            ProjectHub
+          <img src="/favicon.svg" alt="ProjectHub" className="h-8 w-8" />
+          <span className="font-heading text-lg font-bold hidden sm:block">
+            <span className="text-foreground">Project</span><span className="text-primary">Hub</span>
           </span>
         </Link>
 
