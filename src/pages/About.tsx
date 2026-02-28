@@ -1,19 +1,10 @@
-import { Users, Target, Zap, Globe, Star, TrendingUp } from "lucide-react";
+import { Users, Target, Zap, Globe, Star, TrendingUp, Briefcase } from "lucide-react";
 
 const stats = [
   { label: "Freelancers",     value: "10,000+",  icon: Users      },
   { label: "Projects Posted", value: "25,000+",  icon: Briefcase  },
   { label: "Cities Covered",  value: "200+",     icon: Globe      },
   { label: "Success Rate",    value: "94%",      icon: TrendingUp },
-];
-
-import { Briefcase } from "lucide-react";
-
-const team = [
-  { name: "Dnyaneshwar Ambhore", role: "Founder & CEO",       initials: "DA" },
-  { name: "Priya Sharma",        role: "Head of Product",     initials: "PS" },
-  { name: "Rahul Mehta",         role: "Lead Engineer",       initials: "RM" },
-  { name: "Sneha Patil",         role: "Community Manager",   initials: "SP" },
 ];
 
 const values = [
@@ -69,23 +60,6 @@ const About = () => (
       </div>
     </div>
 
-    {/* Team */}
-    <div className="space-y-6">
-      <h2 className="font-heading text-2xl font-bold text-foreground text-center">Meet the Team</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {team.map(({ name, role, initials }) => (
-          <div key={name} className="rounded-xl border border-border bg-card p-5 text-center space-y-3">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 border-2 border-primary/20">
-              <span className="text-lg font-bold text-primary">{initials}</span>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">{name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{role}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   </div>
 );
 

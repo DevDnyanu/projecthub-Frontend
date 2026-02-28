@@ -77,7 +77,6 @@ const Footer = () => {
                 { label: "Browse Projects", action: () => navigate("/")                    },
                 { label: "Post a Project",  action: () => handleProtected("/post-project") },
                 { label: "How It Works",    action: () => navigate("/how-it-works")        },
-                { label: "Pricing",         action: () => navigate("/pricing")             },
               ].map(({ label, action }) => (
                 <li key={label}>
                   <button
@@ -119,7 +118,6 @@ const Footer = () => {
             <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Support</h3>
             <ul className="space-y-2.5">
               {[
-                { label: "Help Center",      to: "/help"    },
                 { label: "Contact Us",       to: "/contact" },
                 { label: "Terms of Service", to: "/terms"   },
                 { label: "Privacy Policy",   to: "/privacy" },

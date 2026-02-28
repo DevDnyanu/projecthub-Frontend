@@ -318,7 +318,7 @@ const Navbar = () => {
               </Button>
 
               {showNotifPanel && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="fixed inset-x-2 top-[70px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
 
                   {/* ── Header ── */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -390,7 +390,7 @@ const Navbar = () => {
                   </div>
 
                   {/* ── Notification list / empty state ── */}
-                  <div className="max-h-52 overflow-y-auto border-t border-border/60">
+                  <div className="max-h-48 sm:max-h-52 overflow-y-auto border-t border-border/60">
                     {unreadNotifs.length === 0 ? (
                       <div className="flex flex-col items-center justify-center px-4 py-6 gap-2">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10 border-2 border-green-500/30">

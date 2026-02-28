@@ -526,12 +526,41 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="p-6 lg:p-8">
+
+        {/* Mobile Tab Navigation — only visible below lg */}
+        <div className="lg:hidden sticky top-16 z-40 border-b bg-card/95 backdrop-blur overflow-x-auto">
+          <div className="flex min-w-max px-2">
+            {sidebarItems.map((item) => {
+              const pendingBids = item.id === "bids" ? bids.filter(b => b?.adminStatus === "pending_admin").length : 0;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabChange(item.id)}
+                  className={`flex items-center gap-1.5 whitespace-nowrap px-3 py-3 text-xs font-medium border-b-2 transition-colors ${
+                    activeTab === item.id
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <item.icon className="h-3.5 w-3.5 shrink-0" />
+                  {item.label}
+                  {pendingBids > 0 && (
+                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white px-1">
+                      {pendingBids}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-6 lg:p-8">
 
           {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="font-heading text-2xl font-bold text-foreground">
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
                 {activeTab === "overview"
                   ? "Dashboard Overview"
                   : sidebarItems.find((i) => i.id === activeTab)?.label}
@@ -805,7 +834,7 @@ const AdminDashboard = () => {
           {/* ── Bids Tab — admin only ── */}
           {activeTab === "bids" && isAdmin && (
             <Card className="overflow-hidden">
-              <div className="border-b px-6 py-4 flex items-center justify-between">
+              <div className="border-b px-4 sm:px-6 py-4 flex items-center justify-between">
                 <div>
                   <h2 className="font-heading text-base font-semibold text-foreground">Bid Management</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">Review and approve or reject freelancer bids</p>
@@ -827,63 +856,86 @@ const AdminDashboard = () => {
               ) : (
                 <div className="divide-y">
                   {bids.map((bid) => (
-                    <div key={bid._id} className="px-6 py-4 flex items-start gap-4">
-                      <Avatar className="h-9 w-9 shrink-0 mt-0.5">
-                        <AvatarImage src={bid.bidder?.avatar} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                          {bid.bidder?.name?.[0] ?? "?"}
-                        </AvatarFallback>
-                      </Avatar>
+                    <div key={bid._id} className="px-4 sm:px-6 py-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-9 w-9 shrink-0 mt-0.5">
+                          <AvatarImage src={bid.bidder?.avatar} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                            {bid.bidder?.name?.[0] ?? "?"}
+                          </AvatarFallback>
+                        </Avatar>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <p className="font-semibold text-foreground text-sm">{bid.bidder?.name ?? "Unknown"}</p>
-                          <span className="text-xs text-muted-foreground">on</span>
-                          <p className="text-sm text-primary font-medium truncate max-w-[200px]">{bid.project?.title ?? "—"}</p>
-                          <Badge variant="outline" className={`text-[10px] ${adminStatusStyles[bid.adminStatus] ?? ""}`}>
-                            {bid.adminStatus === "pending_admin" ? "Pending Review"
-                              : bid.adminStatus === "approved" ? "Approved" : "Rejected"}
-                          </Badge>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <p className="font-semibold text-foreground text-sm">{bid.bidder?.name ?? "Unknown"}</p>
+                            <span className="text-xs text-muted-foreground">on</span>
+                            <p className="text-sm text-primary font-medium truncate max-w-[160px] sm:max-w-[200px]">{bid.project?.title ?? "—"}</p>
+                            <Badge variant="outline" className={`text-[10px] ${adminStatusStyles[bid.adminStatus] ?? ""}`}>
+                              {bid.adminStatus === "pending_admin" ? "Pending Review"
+                                : bid.adminStatus === "approved" ? "Approved" : "Rejected"}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-2">
+                            <span className="font-medium text-foreground">₹{bid.amount?.toLocaleString("en-IN")}</span>
+                            <span>{bid.deliveryDays} days</span>
+                            {bid.experienceLevel && <span>{bid.experienceLevel}</span>}
+                          </div>
+                          {(bid.skills?.length ?? 0) > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {bid.skills.slice(0, 5).map(s => (
+                                <Badge key={s} variant="secondary" className="text-[10px] py-0">{s}</Badge>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground line-clamp-2">{bid.coverLetter}</p>
                         </div>
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-2">
-                          <span className="font-medium text-foreground">₹{bid.amount?.toLocaleString("en-IN")}</span>
-                          <span>{bid.deliveryDays} days</span>
-                          {bid.experienceLevel && <span>{bid.experienceLevel}</span>}
-                        </div>
-                        {(bid.skills?.length ?? 0) > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {bid.skills.slice(0, 5).map(s => (
-                              <Badge key={s} variant="secondary" className="text-[10px] py-0">{s}</Badge>
-                            ))}
+
+                        {/* Desktop action buttons */}
+                        {bid.adminStatus === "pending_admin" && (
+                          <div className="hidden sm:flex flex-col gap-2 shrink-0">
+                            <Button
+                              size="sm" variant="outline"
+                              className="gap-1.5 text-success hover:bg-success/10 border-success/30"
+                              onClick={() => handleApproveBid(bid._id)}
+                            >
+                              <Check className="h-3.5 w-3.5" /> Approve
+                            </Button>
+                            <Button
+                              size="sm" variant="outline"
+                              className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+                              onClick={() => handleRejectBid(bid._id)}
+                            >
+                              <X className="h-3.5 w-3.5" /> Reject
+                            </Button>
                           </div>
                         )}
-                        <p className="text-xs text-muted-foreground line-clamp-2">{bid.coverLetter}</p>
+                        {bid.adminStatus !== "pending_admin" && (
+                          <div className="shrink-0">
+                            {bid.adminStatus === "approved"
+                              ? <CheckCircle2 className="h-5 w-5 text-success" />
+                              : <X className="h-5 w-5 text-destructive" />
+                            }
+                          </div>
+                        )}
                       </div>
 
+                      {/* Mobile action buttons — full width row below content */}
                       {bid.adminStatus === "pending_admin" && (
-                        <div className="flex flex-col gap-2 shrink-0">
+                        <div className="flex gap-2 mt-3 sm:hidden">
                           <Button
                             size="sm" variant="outline"
-                            className="gap-1.5 text-success hover:bg-success/10 border-success/30"
+                            className="flex-1 gap-1.5 text-success hover:bg-success/10 border-success/30"
                             onClick={() => handleApproveBid(bid._id)}
                           >
                             <Check className="h-3.5 w-3.5" /> Approve
                           </Button>
                           <Button
                             size="sm" variant="outline"
-                            className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+                            className="flex-1 gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
                             onClick={() => handleRejectBid(bid._id)}
                           >
                             <X className="h-3.5 w-3.5" /> Reject
                           </Button>
-                        </div>
-                      )}
-                      {bid.adminStatus !== "pending_admin" && (
-                        <div className="shrink-0">
-                          {bid.adminStatus === "approved"
-                            ? <CheckCircle2 className="h-5 w-5 text-success" />
-                            : <X className="h-5 w-5 text-destructive" />
-                          }
                         </div>
                       )}
                     </div>
@@ -944,7 +996,7 @@ const AdminDashboard = () => {
 
                 {/* Payments List */}
                 <Card className="overflow-hidden">
-                  <div className="border-b px-6 py-4 flex items-center justify-between">
+                  <div className="border-b px-4 sm:px-6 py-4 flex items-center justify-between">
                     <div>
                       <h2 className="font-heading text-base font-semibold text-foreground">Payment Transactions</h2>
                       <p className="text-xs text-muted-foreground mt-0.5">All successful Razorpay payments</p>
@@ -969,7 +1021,7 @@ const AdminDashboard = () => {
                   ) : (
                     <div className="divide-y">
                       {payments.map((payment) => (
-                        <div key={payment._id} className="px-6 py-5 flex items-start gap-4 hover:bg-muted/30 transition-colors">
+                        <div key={payment._id} className="px-4 sm:px-6 py-4 sm:py-5 flex items-start gap-3 sm:gap-4 hover:bg-muted/30 transition-colors">
 
                           {/* Success icon */}
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 mt-0.5">
@@ -1356,13 +1408,13 @@ const AdminDashboard = () => {
 
                 <Separator className="my-4" />
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <p className="text-sm text-muted-foreground max-w-sm">
                     You'll need to sign in again to access your dashboard.
                   </p>
                   <Button
                     variant="outline"
-                    className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive self-start sm:self-auto"
                     onClick={handleLogout}
                   >
                     <LogOut className="h-4 w-4" />
@@ -1377,7 +1429,7 @@ const AdminDashboard = () => {
           {/* Projects Table — same for everyone, actions admin-only */}
           {(activeTab === "overview" || activeTab === "projects") && (
           <Card className="overflow-hidden">
-            <div className="border-b px-6 py-4 flex items-center justify-between">
+            <div className="border-b px-4 sm:px-6 py-4 flex items-center justify-between">
               <div>
                 <h2 className="font-heading text-base font-semibold text-foreground">
                   All Projects

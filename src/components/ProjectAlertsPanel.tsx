@@ -268,7 +268,7 @@ const ProjectAlertsPanel = ({ onNewCount, onClose }: Props) => {
   };
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-96 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[520px]">
+    <div className="fixed inset-x-2 top-[70px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[calc(100vh-80px)] sm:max-h-[520px]">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
