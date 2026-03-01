@@ -78,7 +78,6 @@ const PaymentModal = ({
         order_id: order.orderId,
         name: "ProjectHub",
         description: `Payment for: ${projectTitle}`,
-        image: "",
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
@@ -104,13 +103,22 @@ const PaymentModal = ({
               description: "Payment was captured but verification failed. Contact support with your payment ID.",
               variant: "destructive",
             });
+          } finally {
+            setLoading(false);
           }
         },
         prefill: {
           name: userName || "",
           email: userEmail || "",
+          contact: "9999999999",
         },
         theme: { color: "#6366f1" },
+        config: {
+          display: {
+            sequence: ["upi", "card", "netbanking", "wallet"],
+            preferences: { show_default_blocks: true },
+          },
+        },
         modal: {
           ondismiss: () => {
             toast({
@@ -120,6 +128,19 @@ const PaymentModal = ({
             });
             setLoading(false);
           },
+          escape: true,
+          animation: true,
+        },
+        "payment.failed": (response: {
+          error: { code: string; description: string; reason: string; source: string; step: string };
+        }) => {
+          console.error("Razorpay payment failed:", response.error);
+          toast({
+            title: "Payment Failed",
+            description: response.error.description || "Payment failed. Please try again with test credentials.",
+            variant: "destructive",
+          });
+          setLoading(false);
         },
       });
 
