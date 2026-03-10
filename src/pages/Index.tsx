@@ -150,7 +150,7 @@ const Index = () => {
                     </button>
                   )}
                 </div>
-                <button className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-[15px] font-semibold text-white shadow-lg shadow-primary/40 hover:bg-primary/90 active:scale-95 transition-all duration-150">
+                <button className="btn-glow shrink-0 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-[15px] font-semibold text-white shadow-lg shadow-primary/40 hover:bg-primary/90 active:scale-95 transition-all duration-200">
                   <Search className="h-4 w-4" />
                   Search
                 </button>

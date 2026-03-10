@@ -141,13 +141,15 @@ const Navbar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
+    <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/60 shadow-[0_1px_20px_-4px_hsl(220_20%_5%/0.4)]">
       <div className="mx-auto max-w-7xl h-16 flex items-center gap-3 px-4 sm:px-6">
 
         {/* ── Logo ── */}
-        <Link to="/" className="flex items-center gap-2 shrink-0 mr-2">
-          <img src="/favicon.svg" alt="ProjectHub" className="h-8 w-8" />
-          <span className="font-heading text-[1.05rem] font-bold tracking-tight">
+        <Link to="/" className="flex items-center gap-2.5 shrink-0 mr-2 group">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30 transition-all duration-200 group-hover:scale-105 group-hover:shadow-primary/50">
+            <Briefcase className="h-4 w-4 text-white" />
+          </div>
+          <span className="font-heading text-[1.05rem] font-extrabold tracking-tight leading-none">
             <span className="text-foreground">Project</span><span className="text-primary">Hub</span>
           </span>
         </Link>
@@ -181,16 +183,16 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* ── Nav links — full-height underline tab style ── */}
-        <nav className="hidden md:flex self-stretch items-center ml-1">
+        {/* ── Nav links — pill style ── */}
+        <nav className="hidden md:flex items-center gap-0.5 ml-1">
           {navItems.map((item) => (
             <button
               key={item.path}
               onClick={() => item.protected ? handleProtectedNav(item.path) : navigate(item.path)}
-              className={`self-stretch flex items-center px-3.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              className={`flex items-center px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 isActive(item.path)
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
               {item.label}
@@ -199,10 +201,10 @@ const Navbar = () => {
           {isLoggedIn && (
             <button
               onClick={() => handleProtectedNav("/admin")}
-              className={`self-stretch flex items-center gap-1.5 px-3.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 isActive("/admin")
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
               {user?.is_admin
@@ -222,7 +224,7 @@ const Navbar = () => {
           <Button
             size="sm"
             onClick={() => handleProtectedNav("/post-project")}
-            className="hidden md:flex gap-1.5 h-8 px-3.5 text-sm font-semibold rounded-lg"
+            className="hidden md:flex gap-1.5 h-8 px-3.5 text-sm font-semibold rounded-lg shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow"
           >
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden lg:inline">Post Project</span>
@@ -238,7 +240,7 @@ const Navbar = () => {
             <div className="relative" ref={alertsRef}>
               <button
                 onClick={() => { setShowAlertsPanel((p) => !p); setShowNotifPanel(false); }}
-                className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                className="relative flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200"
               >
                 <Flag className="h-4 w-4" />
                 {alertsBadge > 0 && (
@@ -256,7 +258,7 @@ const Navbar = () => {
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => { setShowNotifPanel((p) => !p); setShowAlertsPanel(false); setMobileOpen(false); }}
-                className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                className="relative flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200"
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
@@ -267,7 +269,7 @@ const Navbar = () => {
               </button>
 
               {showNotifPanel && (
-                <div className="fixed inset-x-2 top-[70px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="fixed inset-x-2 top-[70px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-card/95 backdrop-blur-xl border border-border/70 rounded-2xl shadow-2xl shadow-black/30 z-50 overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <div className="flex items-center gap-2">
                       <Bell className="h-4 w-4 text-primary" />
@@ -362,8 +364,8 @@ const Navbar = () => {
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-secondary transition-colors ml-0.5">
-                  <Avatar className="h-7 w-7 ring-2 ring-primary/20">
+                <button className="flex items-center gap-2 rounded-xl pl-1 pr-2 py-1 hover:bg-secondary transition-all duration-200 ml-0.5 border border-transparent hover:border-border/60">
+                  <Avatar className="h-7 w-7 ring-2 ring-primary/30">
                     <AvatarImage src={user?.avatar} alt={user?.name} />
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
@@ -416,7 +418,7 @@ const Navbar = () => {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors md:hidden ml-1"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 md:hidden ml-1"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -461,7 +463,7 @@ const Navbar = () => {
 
       {/* ── Mobile menu ── */}
       {mobileOpen && (
-        <div className="md:hidden bg-card border-t border-border shadow-lg">
+        <div className="md:hidden bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-2xl shadow-black/20">
           {isLoggedIn && (
             <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-secondary/40">
               <Avatar className="h-9 w-9 shrink-0 ring-2 ring-primary/20">

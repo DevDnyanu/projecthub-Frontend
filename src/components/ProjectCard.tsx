@@ -30,9 +30,9 @@ const ProjectCard = ({ project }: { project: Project }) => {
       <div className={`
         relative flex flex-col h-full rounded-2xl border bg-card
         ${cfg.borderCls}
-        shadow-sm group-hover:shadow-xl group-hover:shadow-primary/10
-        group-hover:-translate-y-1.5 group-hover:bg-card
-        transition-all duration-250 ease-out overflow-hidden
+        shadow-sm group-hover:shadow-2xl group-hover:shadow-primary/12
+        group-hover:-translate-y-1.5
+        transition-all duration-300 ease-out overflow-hidden
       `}>
 
         {/* ── HEADER STRIP ── */}
@@ -52,7 +52,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
             )}
             {/* New badge */}
             {showNew && (
-              <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
+              <span className="badge-new inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
                 NEW
               </span>
             )}
