@@ -101,7 +101,155 @@
   }
 }
 
+/* ── Card animations ────────────────────────────────── */
+
+/* 1. Entrance: slide up + fade in */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.card-enter {
+  animation: slideUpFade 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 2. Animated gradient glow border on hover */
+@keyframes borderSpin {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+.card-glow {
+  position: relative;
+  isolation: isolate;
+}
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    hsl(220,80%,55%),
+    hsl(260,80%,65%),
+    hsl(190,80%,55%),
+    hsl(220,80%,55%)
+  );
+  background-size: 300% 300%;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  animation: borderSpin 3s linear infinite;
+}
+.card-glow:hover::before {
+  opacity: 1;
+}
+
+/* 3. Shimmer skeleton */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted))     0%,
+    hsl(var(--secondary)) 40%,
+    hsl(var(--secondary)) 60%,
+    hsl(var(--muted))     100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* 4. NEW badge pulse ring */
+@keyframes badgePulse {
+  0%,100% { box-shadow: 0 0 0 0    hsl(220 80% 50% / 0.5); }
+  50%      { box-shadow: 0 0 0 5px hsl(220 80% 50% / 0);   }
+}
+.badge-new {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+/* 5. CTA button pulse glow */
+@keyframes ctaPulse {
+  0%,100% { box-shadow: 0 0 0 0    hsl(220 80% 50% / 0.55); }
+  50%     { box-shadow: 0 0 0 10px hsl(220 80% 50% / 0);    }
+}
+.cta-pulse { animation: ctaPulse 2.5s ease-in-out infinite; }
+
+/* 6. Proposal / bid card slide-in from left */
+@keyframes bidSlideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+.bid-enter { animation: bidSlideIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 7. Step-wizard slide transitions */
+@keyframes stepFwdIn {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+@keyframes stepBwdIn {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+.step-enter-fwd { animation: stepFwdIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.step-enter-bwd { animation: stepBwdIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 8. Success check bounce */
+@keyframes successBounce {
+  0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.success-bounce { animation: successBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* 9. Status hero gradient shimmer */
+@keyframes heroShift {
+  0%,100% { background-position: 0%   50%; }
+  50%     { background-position: 100% 50%; }
+}
+.hero-gradient {
+  background-size: 200% 200%;
+  animation: heroShift 5s ease infinite;
+}
+
+/* ── Slideshow card transitions ─────────────────────── */
+@keyframes slideInNext {
+  from { opacity: 0; transform: translateX(80px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+}
+@keyframes slideOutNext {
+  from { opacity: 1; transform: translateX(0)     scale(1);    }
+  to   { opacity: 0; transform: translateX(-80px) scale(0.97); }
+}
+@keyframes slideInPrev {
+  from { opacity: 0; transform: translateX(-80px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0)     scale(1);    }
+}
+@keyframes slideOutPrev {
+  from { opacity: 1; transform: translateX(0)    scale(1);    }
+  to   { opacity: 0; transform: translateX(80px) scale(0.97); }
+}
+.slide-enter-next { animation: slideInNext  0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.slide-exit-next  { animation: slideOutNext 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.slide-enter-prev { animation: slideInPrev  0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.slide-exit-prev  { animation: slideOutPrev 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ── Settings page helpers ───────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.settings-enter {
+  animation: fadeSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .ease-spring { transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); }
+
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(220 80% 50%), hsl(350 80% 56%));

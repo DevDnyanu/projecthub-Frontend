@@ -8,12 +8,19 @@ export interface AuthUser {
   avatar: string;
   is_admin: boolean;
   isEmailVerified: boolean;
+  twoFactorEnabled?: boolean;
 }
+
+export type LoginResult =
+  | { success: true;  requires2FA: false; needsVerification?: boolean }
+  | { success: true;  requires2FA: true;  tempToken: string }
+  | { success: false; requires2FA?: never };
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoggedIn: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; needsVerification?: boolean }>;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  complete2faLogin: (tempToken: string, totpCode: string) => Promise<LoginResult>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateAvatar: (url: string) => void;
@@ -37,6 +44,7 @@ interface ApiUser {
   avatar: string;
   role: "buyer" | "seller" | "admin";
   isEmailVerified?: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 const toAuthUser = (u: ApiUser): AuthUser => ({
@@ -46,6 +54,7 @@ const toAuthUser = (u: ApiUser): AuthUser => ({
   avatar: u.avatar,
   is_admin: u.role === "admin",
   isEmailVerified: u.isEmailVerified ?? true,
+  twoFactorEnabled: u.twoFactorEnabled ?? false,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -63,20 +72,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     else localStorage.removeItem(SESSION_KEY);
   };
 
-  const login = useCallback(async (
-    email: string,
-    password: string,
-  ): Promise<{ success: boolean; needsVerification?: boolean }> => {
+  // Step 1: email + password
+  const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
+    try {
+      const data = await api.post<{
+        token?: string;
+        user?: ApiUser;
+        needsVerification?: boolean;
+        requires2FA?: boolean;
+        tempToken?: string;
+      }>("/auth/login", { email, password });
+
+      // 2FA required — server didn't issue a full JWT yet
+      if (data.requires2FA && data.tempToken) {
+        return { success: true, requires2FA: true, tempToken: data.tempToken };
+      }
+
+      // Normal login — JWT returned
+      if (data.token && data.user) {
+        setToken(data.token);
+        const authUser = toAuthUser(data.user);
+        setUser(authUser);
+        persist(authUser);
+        return { success: true, requires2FA: false, needsVerification: data.needsVerification ?? false };
+      }
+
+      return { success: false };
+    } catch {
+      return { success: false };
+    }
+  }, []);
+
+  // Step 2: verify TOTP code after 2FA challenge
+  const complete2faLogin = useCallback(async (tempToken: string, totpCode: string): Promise<LoginResult> => {
     try {
       const data = await api.post<{ token: string; user: ApiUser; needsVerification?: boolean }>(
-        "/auth/login",
-        { email, password },
+        "/auth/verify-2fa-login",
+        { tempToken, totpCode }
       );
       setToken(data.token);
       const authUser = toAuthUser(data.user);
       setUser(authUser);
       persist(authUser);
-      return { success: true, needsVerification: data.needsVerification ?? false };
+      return { success: true, requires2FA: false, needsVerification: data.needsVerification ?? false };
     } catch {
       return { success: false };
     }
@@ -102,7 +140,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem("userAuth");
   }, []);
 
-  // Called after avatar upload to refresh the displayed avatar
   const updateAvatar = useCallback((url: string) => {
     setUser((prev) => {
       if (!prev) return prev;
@@ -112,7 +149,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, []);
 
-  // Called after profile update (name / email)
   const updateUser = useCallback((updates: Partial<Pick<AuthUser, "name" | "email">>) => {
     setUser((prev) => {
       if (!prev) return prev;
@@ -122,7 +158,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, []);
 
-  // Restore session from token on first load (validates token with server)
+  // Restore session from token on first load
   React.useEffect(() => {
     const token = getToken();
     if (token && !user) {
@@ -134,7 +170,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           persist(authUser);
         })
         .catch(() => {
-          // Token invalid/expired — clear it
           clearToken();
           persist(null);
         });
@@ -144,7 +179,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoggedIn: !!user, login, signup, logout, updateAvatar, updateUser }}
+      value={{ user, isLoggedIn: !!user, login, complete2faLogin, signup, logout, updateAvatar, updateUser }}
     >
       {children}
     </AuthContext.Provider>

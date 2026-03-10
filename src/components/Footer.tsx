@@ -1,67 +1,148 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Twitter, Linkedin, Instagram, Github,
-  Mail, MapPin, Phone, Briefcase,
+  Mail, MapPin, Phone, Send, CheckCircle2,
+  Briefcase, ArrowUpRight,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-const Footer = () => {
-  const { isLoggedIn } = useAuth();
-  const navigate = useNavigate();
+/* ── Newsletter ───────────────────────────────────────── */
+function Newsletter() {
+  const [email, setEmail] = useState("");
+  const [done, setDone]   = useState(false);
 
-  const handleProtected = (path: string) => {
-    navigate(isLoggedIn ? path : "/login");
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.includes("@")) return;
+    setDone(true);
+    setEmail("");
+    setTimeout(() => setDone(false), 4000);
   };
 
   return (
-    <footer className="border-t border-border bg-card mt-auto">
-      {/* ── Main footer grid ── */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <p className="text-[13px] text-slate-400 mb-3 leading-relaxed">
+        Get the latest projects and platform news — no spam, ever.
+      </p>
+      {done ? (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span className="text-[13px] font-medium text-emerald-400">You're subscribed!</span>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+            className="flex-1 min-w-0 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-[13px] text-slate-200 placeholder:text-slate-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+          />
+          <button
+            type="submit"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary/90 transition-colors"
+          >
+            <Send className="h-3.5 w-3.5" />
+            Subscribe
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
 
-          {/* ── Brand ── */}
-          <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/favicon.svg" alt="ProjectHub" className="h-9 w-9" />
-              <span className="font-heading text-xl font-bold">
-                <span className="text-foreground">Project</span><span className="text-primary">Hub</span>
-              </span>
+/* ── Data ─────────────────────────────────────────────── */
+
+const SOCIALS = [
+  { icon: Twitter,   href: "https://twitter.com",   label: "Twitter",   cls: "hover:bg-sky-500/15 hover:text-sky-400 hover:border-sky-500/30"     },
+  { icon: Linkedin,  href: "https://linkedin.com",  label: "LinkedIn",  cls: "hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-500/30"  },
+  { icon: Instagram, href: "https://instagram.com", label: "Instagram", cls: "hover:bg-pink-500/15 hover:text-pink-400 hover:border-pink-500/30"  },
+  { icon: Github,    href: "https://github.com",    label: "GitHub",    cls: "hover:bg-slate-500/15 hover:text-slate-300 hover:border-slate-500/30"},
+];
+
+const BOTTOM_LINKS = [
+  { label: "Terms of Service", to: "/terms"   },
+  { label: "Privacy Policy",   to: "/privacy" },
+  { label: "Contact Us",       to: "/contact" },
+  { label: "Blog",             to: "/blog"    },
+];
+
+/* ── Footer link ──────────────────────────────────────── */
+const FLink = ({ label, to, onClick }: { label: string; to?: string; onClick?: () => void }) => {
+  const cls = "group flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-white transition-colors duration-200";
+  const inner = (
+    <>
+      <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 -translate-y-0.5 translate-x-0.5 group-hover:translate-y-0 group-hover:translate-x-0 transition-all duration-200 shrink-0 text-primary" />
+      {label}
+    </>
+  );
+  if (to) return <li><Link to={to} className={cls}>{inner}</Link></li>;
+  return <li><button onClick={onClick} className={cls}>{inner}</button></li>;
+};
+
+/* ══════════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════════ */
+const Footer = () => {
+  const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
+  const goProtected = (path: string) => navigate(isLoggedIn ? path : "/login");
+
+  return (
+    <footer className="bg-slate-950 text-slate-300 border-t border-slate-800">
+
+      {/* ── Main grid ──────────────────────────────────── */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-12">
+
+          {/* Brand col — wider */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 w-fit">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30">
+                <Briefcase className="h-5 w-5 text-white" />
+              </div>
+              <div className="leading-tight">
+                <p className="font-heading text-xl font-extrabold text-white tracking-tight">ProjectHub</p>
+                <p className="text-[11px] text-slate-500 font-medium">India's Freelance Marketplace</p>
+              </div>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              India's growing freelance marketplace connecting talented professionals with businesses that need them most.
+
+            {/* Tagline */}
+            <p className="text-[13px] text-slate-400 leading-relaxed max-w-xs">
+              Connecting India's top freelancers with growing businesses since 2023.
+              Post a project, place a bid, and get work done — professionally.
             </p>
 
-            {/* Contact info */}
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary shrink-0" />
-                <span>support@projecthub.in</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary shrink-0" />
-                <span>+91 98765 43210</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary shrink-0" />
-                <span>Pune, Maharashtra, India</span>
-              </div>
-            </div>
-
-            {/* Social links */}
-            <div className="flex items-center gap-3 pt-1">
+            {/* Contact */}
+            <ul className="space-y-2.5">
               {[
-                { icon: Twitter,   href: "https://twitter.com",   label: "Twitter"   },
-                { icon: Linkedin,  href: "https://linkedin.com",  label: "LinkedIn"  },
-                { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-                { icon: Github,    href: "https://github.com",    label: "GitHub"    },
-              ].map(({ icon: Icon, href, label }) => (
+                { icon: Mail,   text: "support@projecthub.in"   },
+                { icon: Phone,  text: "+91 98765 43210"          },
+                { icon: MapPin, text: "Pune, Maharashtra, India" },
+              ].map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-800 border border-slate-700">
+                    <Icon className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-[13px] text-slate-400">{text}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Socials */}
+            <div className="flex items-center gap-2">
+              {SOCIALS.map(({ icon: Icon, href, label, cls }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary transition-colors"
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/60 text-slate-400 transition-all duration-200 ${cls}`}
                 >
                   <Icon className="h-4 w-4" />
                 </a>
@@ -69,88 +150,103 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* ── For Clients ── */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">For Clients</h3>
-            <ul className="space-y-2.5">
-              {[
-                { label: "Browse Projects", action: () => navigate("/")                    },
-                { label: "Post a Project",  action: () => handleProtected("/post-project") },
-                { label: "How It Works",    action: () => navigate("/how-it-works")        },
-              ].map(({ label, action }) => (
-                <li key={label}>
-                  <button
-                    onClick={action}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {label}
-                  </button>
-                </li>
-              ))}
+          {/* For Clients */}
+          <div className="lg:col-span-2">
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              For Clients
+            </h4>
+            <ul className="space-y-3.5">
+              <FLink label="Browse Projects"  onClick={() => navigate("/")} />
+              <FLink label="Post a Project"   onClick={() => goProtected("/post-project")} />
+              <FLink label="How It Works"     to="/how-it-works" />
+              <FLink label="Pricing"          to="/pricing" />
+              <FLink label="Help Center"      to="/help" />
             </ul>
           </div>
 
-          {/* ── For Freelancers ── */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">For Freelancers</h3>
-            <ul className="space-y-2.5">
-              {[
-                { label: "Find Projects",      action: () => navigate("/")                    },
-                { label: "My Dashboard",       action: () => handleProtected("/admin")         },
-                { label: "My Projects",        action: () => handleProtected("/my-projects")   },
-                { label: "Bidding Guide",      action: () => navigate("/help")                },
-                { label: "Build Your Profile", action: () => handleProtected("/my-projects")   },
-              ].map(({ label, action }) => (
-                <li key={label}>
-                  <button
-                    onClick={action}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {label}
-                  </button>
-                </li>
-              ))}
+          {/* For Freelancers */}
+          <div className="lg:col-span-2">
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              For Freelancers
+            </h4>
+            <ul className="space-y-3.5">
+              <FLink label="Find Projects"   onClick={() => navigate("/")} />
+              <FLink label="My Projects"     onClick={() => goProtected("/my-projects")} />
+              <FLink label="Dashboard"       onClick={() => goProtected("/admin")} />
+              <FLink label="Bidding Guide"   to="/help" />
+              <FLink label="Success Stories" to="/blog" />
             </ul>
           </div>
 
-          {/* ── Support ── */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Support</h3>
-            <ul className="space-y-2.5">
-              {[
-                { label: "Contact Us",       to: "/contact" },
-                { label: "Terms of Service", to: "/terms"   },
-                { label: "Privacy Policy",   to: "/privacy" },
-                { label: "About Us",         to: "/about"   },
-              ].map(({ label, to }) => (
-                <li key={label}>
-                  <Link to={to} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    {label}
-                  </Link>
-                </li>
-              ))}
+          {/* Company */}
+          <div className="lg:col-span-2">
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Company
+            </h4>
+            <ul className="space-y-3.5">
+              <FLink label="About Us"   to="/about"      />
+              <FLink label="Blog"       to="/blog"       />
+              <FLink label="Careers"    to="/careers"    />
+              <FLink label="Press"      to="/press"      />
+              <FLink label="Contact"    to="/contact"    />
             </ul>
           </div>
-        </div>
-      </div>
 
-      {/* ── Bottom bar ── */}
-      <div className="border-t border-border bg-secondary/20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground text-center sm:text-left">
-            © {new Date().getFullYear()} ProjectHub. All rights reserved. Made with ❤️ in India.
-          </p>
-          <div className="flex items-center gap-4">
-            <Link to="/terms"   className="text-xs text-muted-foreground hover:text-primary transition-colors">Terms</Link>
-            <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">Privacy</Link>
-            <Link to="/contact" className="text-xs text-muted-foreground hover:text-primary transition-colors">Contact</Link>
-            <div className="flex items-center gap-1.5 ml-2 border-l border-border pl-4">
-              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs text-muted-foreground">All systems operational</span>
+          {/* Newsletter */}
+          <div className="lg:col-span-2 sm:col-span-2">
+            <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Newsletter
+            </h4>
+            <Newsletter />
+
+            {/* Trust badge */}
+            <div className="mt-7 flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-[12px] font-semibold text-slate-200">Secure Payments</p>
+                <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                  100% payment protection on every transaction.
+                </p>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
+
+      {/* ── Bottom bar ─────────────────────────────────── */}
+      <div className="border-t border-slate-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-5">
+
+            <p className="text-[12px] text-slate-600 text-center sm:text-left">
+              © {new Date().getFullYear()} <span className="text-slate-400 font-medium">ProjectHub Technologies Pvt. Ltd.</span>
+              &nbsp;All rights reserved.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              {BOTTOM_LINKS.map(({ label, to }) => (
+                <Link key={to} to={to} className="text-[12px] text-slate-600 hover:text-slate-300 transition-colors duration-200">
+                  {label}
+                </Link>
+              ))}
+
+              {/* Live status */}
+              <div className="flex items-center gap-2 pl-4 border-l border-slate-800">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-50" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="text-[12px] text-slate-600">All systems operational</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </footer>
   );
 };

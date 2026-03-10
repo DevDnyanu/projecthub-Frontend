@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import UserLogin      from "./pages/UserLogin";
 import VerifyEmail    from "./pages/VerifyEmail";
 import ResetPassword  from "./pages/ResetPassword";
 import UserProfile    from "./pages/UserProfile";
+import Settings       from "./pages/Settings";
 import NotFound       from "./pages/NotFound";
 
 // Footer pages
@@ -35,6 +37,13 @@ import Press      from "./pages/Press";
 const queryClient = new QueryClient();
 
 /** Redirect to /login if not authenticated */
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [pathname]);
+  return null;
+};
+
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn } = useAuth();
   return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />;
@@ -48,6 +57,7 @@ const AppRoutes = () => {
 
   return (
   <div className="flex min-h-screen flex-col bg-background">
+    <ScrollToTop />
     <Navbar />
 
     <main className="flex-1">
@@ -64,6 +74,7 @@ const AppRoutes = () => {
         <Route path="/post-project" element={<RequireAuth><PostProject /></RequireAuth>} />
         <Route path="/my-projects"  element={<RequireAuth><MyProjects /></RequireAuth>} />
         <Route path="/admin"        element={<RequireAuth><AdminDashboard /></RequireAuth>} />
+        <Route path="/settings"     element={<RequireAuth><Settings /></RequireAuth>} />
 
         {/* ── Footer pages (public) ── */}
         <Route path="/about"        element={<About />} />

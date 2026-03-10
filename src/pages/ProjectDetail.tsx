@@ -35,6 +35,15 @@ const bidStatusStyles: Record<string, string> = {
   rejected: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+/* Animated hero gradient per status */
+const statusHero: Record<string, { gradient: string; dot: string; glow: string }> = {
+  open:          { gradient: "from-emerald-500/25 via-emerald-400/10 to-transparent", dot: "bg-emerald-500 shadow-emerald-500/60", glow: "shadow-emerald-500/10" },
+  "in-progress": { gradient: "from-amber-500/25 via-amber-400/10 to-transparent",   dot: "bg-amber-500  shadow-amber-500/60",  glow: "shadow-amber-500/10"  },
+  completed:     { gradient: "from-slate-500/20 via-slate-400/8 to-transparent",    dot: "bg-slate-400",                        glow: "shadow-slate-500/10"  },
+  cancelled:     { gradient: "from-red-500/20 via-red-400/8 to-transparent",        dot: "bg-red-500    shadow-red-500/60",     glow: "shadow-red-500/10"    },
+  pending:       { gradient: "from-primary/25 via-primary/10 to-transparent",       dot: "bg-primary    shadow-primary/60",     glow: "shadow-primary/10"    },
+};
+
 interface ApiBid {
   _id: string;
   amount: number;
@@ -77,7 +86,7 @@ const StarRating = ({ rating, max = 5 }: { rating: number; max?: number }) => (
   </div>
 );
 
-/* ── Bid Card (Freelancer.com style) ── */
+/* ── Bid Card ── */
 const BidCard = ({
   bid,
   isOwner,
@@ -92,138 +101,156 @@ const BidCard = ({
   onAction: (id: string, status: "accepted" | "rejected") => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const MAX_LEN = 160;
+  const MAX_LEN = 200;
   const isLong = bid.coverLetter && bid.coverLetter.length > MAX_LEN;
   const displayText =
     !expanded && isLong
       ? bid.coverLetter.slice(0, MAX_LEN) + "…"
       : bid.coverLetter;
 
-  return (
-    <div className="rounded-xl border border-border bg-card p-5 hover:border-primary/30 transition-colors">
-      <div className="flex gap-4">
-        {/* Avatar */}
-        <Avatar className="h-14 w-14 shrink-0 rounded-xl border border-border">
-          <AvatarImage src={bid.bidder.avatar} />
-          <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold rounded-xl">
-            {bid.bidder.name[0]}
-          </AvatarFallback>
-        </Avatar>
+  const isAccepted = bid.status === "accepted";
+  const isRejected = bid.status === "rejected";
 
-        {/* Main content */}
-        <div className="flex-1 min-w-0">
-          {/* Name + handle + rating */}
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-foreground text-sm">{bid.bidder.name}</p>
-                {bid.status === "accepted" && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
-                    <BadgeCheck className="h-3 w-3" /> ACCEPTED
+  return (
+    <div className={`rounded-2xl border bg-card overflow-hidden transition-all duration-200 hover:shadow-md ${
+      isAccepted
+        ? "border-green-500/40 shadow-green-500/5 shadow-sm"
+        : isRejected
+        ? "border-border opacity-60"
+        : "border-border hover:border-primary/30"
+    }`}>
+      {/* Accepted banner */}
+      {isAccepted && (
+        <div className="flex items-center gap-2 bg-green-500/10 border-b border-green-500/20 px-4 py-2">
+          <BadgeCheck className="h-4 w-4 text-green-600 shrink-0" />
+          <span className="text-xs font-bold text-green-600 uppercase tracking-wide">Accepted Proposal</span>
+        </div>
+      )}
+
+      <div className="p-5">
+        <div className="flex gap-4">
+          {/* Avatar */}
+          <Avatar className="h-12 w-12 shrink-0 rounded-xl border-2 border-border">
+            <AvatarImage src={bid.bidder.avatar} />
+            <AvatarFallback className="bg-primary/10 text-primary font-bold rounded-xl text-base">
+              {bid.bidder.name[0]}
+            </AvatarFallback>
+          </Avatar>
+
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+            {/* Top row: name + bid amount */}
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <p className="font-bold text-foreground text-sm leading-tight">{bid.bidder.name}</p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <StarRating rating={bid.bidder.rating} />
+                  {bid.bidder.experienceLevel && (
+                    <span className="text-[10px] text-muted-foreground bg-secondary rounded px-1.5 py-0.5">
+                      {bid.bidder.experienceLevel}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Bid amount pill */}
+              <div className="shrink-0 text-right">
+                <div className="inline-flex items-baseline gap-0.5 rounded-xl bg-primary/8 border border-primary/15 px-3 py-1.5">
+                  <span className="text-[11px] text-primary font-semibold">₹</span>
+                  <span className="text-base font-extrabold text-primary leading-none">
+                    {bid.amount.toLocaleString("en-IN")}
                   </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1 text-center">
+                  in {bid.deliveryDays} days
+                </p>
+              </div>
+            </div>
+
+            {/* Cover letter */}
+            {bid.coverLetter && (
+              <p className="text-[13px] text-muted-foreground leading-relaxed mb-2.5">
+                {displayText}
+                {isLong && (
+                  <button
+                    onClick={() => setExpanded((p) => !p)}
+                    className="ml-1 text-primary hover:underline text-xs font-semibold"
+                  >
+                    {expanded ? "show less" : "read more"}
+                  </button>
                 )}
-                {bid.status === "rejected" && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                    REJECTED
+              </p>
+            )}
+
+            {/* Skills */}
+            {bid.bidder.skills && bid.bidder.skills.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2.5">
+                {bid.bidder.skills.slice(0, 5).map((s) => (
+                  <span key={s} className="rounded-md bg-secondary border border-border px-2 py-0.5 text-[10px] font-medium text-foreground/70">
+                    {s}
                   </span>
+                ))}
+              </div>
+            )}
+
+            {/* Footer: stats + actions */}
+            <div className="flex items-center justify-between gap-2 flex-wrap pt-2.5 border-t border-border/50">
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Gavel className="h-3 w-3" />
+                  {bid.bidder.completedProjects} completed
+                </span>
+                {bid.bidder.linkedinUrl && (
+                  <a
+                    href={bid.bidder.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-500 hover:underline"
+                  >
+                    <Linkedin className="h-3 w-3" /> LinkedIn
+                  </a>
                 )}
               </div>
 
-              <StarRating rating={bid.bidder.rating} />
-
-              {bid.bidder.experienceLevel && (
-                <p className="text-xs text-muted-foreground mt-0.5">{bid.bidder.experienceLevel}</p>
+              {/* Owner actions */}
+              {isOwner && bid.status === "pending" && projectStatus === "open" && (
+                <div className="flex items-center gap-2">
+                  {bid.adminStatus === "pending_admin" ? (
+                    <div className="flex items-center gap-1.5 rounded-lg bg-yellow-500/10 px-2.5 py-1 text-yellow-600 text-[10px] font-medium">
+                      <ShieldCheck className="h-3 w-3 shrink-0" />
+                      Awaiting admin
+                    </div>
+                  ) : bid.adminStatus === "rejected_admin" ? (
+                    <div className="rounded-lg bg-destructive/10 px-2.5 py-1 text-destructive text-[10px] font-medium">
+                      Admin rejected
+                    </div>
+                  ) : (
+                    <>
+                      <Button
+                        size="sm"
+                        className="gap-1 bg-green-600 hover:bg-green-700 text-white h-7 text-[11px] px-3"
+                        disabled={updatingBid === bid._id}
+                        onClick={() => onAction(bid._id, "accepted")}
+                      >
+                        <ThumbsUp className="h-3 w-3" />
+                        {updatingBid === bid._id ? "…" : "Accept"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-destructive hover:bg-destructive/10 border-destructive/30 h-7 text-[11px] px-3"
+                        disabled={updatingBid === bid._id}
+                        onClick={() => onAction(bid._id, "rejected")}
+                      >
+                        <ThumbsDown className="h-3 w-3" />
+                        {updatingBid === bid._id ? "…" : "Reject"}
+                      </Button>
+                    </>
+                  )}
+                </div>
               )}
-            </div>
-
-            {/* Bid amount + delivery */}
-            <div className="text-right shrink-0">
-              <p className="font-bold text-foreground text-base">
-                ₹{bid.amount.toLocaleString("en-IN")}
-              </p>
-              <p className="text-xs text-muted-foreground">in {bid.deliveryDays} days</p>
             </div>
           </div>
-
-          {/* Cover letter */}
-          {bid.coverLetter && (
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              {displayText}
-              {isLong && (
-                <button
-                  onClick={() => setExpanded((p) => !p)}
-                  className="ml-1 text-primary hover:underline text-xs font-medium"
-                >
-                  {expanded ? "less" : "more"}
-                </button>
-              )}
-            </p>
-          )}
-
-          {/* Skills */}
-          {bid.bidder.skills && bid.bidder.skills.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {bid.bidder.skills.slice(0, 5).map((s) => (
-                <Badge key={s} variant="secondary" className="text-[10px] px-2 py-0.5">{s}</Badge>
-              ))}
-            </div>
-          )}
-
-          {/* LinkedIn + completed projects */}
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Gavel className="h-3 w-3" />
-              {bid.bidder.completedProjects} projects completed
-            </span>
-            {bid.bidder.linkedinUrl && (
-              <a
-                href={bid.bidder.linkedinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-blue-500 hover:underline"
-              >
-                <Linkedin className="h-3 w-3" /> LinkedIn
-              </a>
-            )}
-          </div>
-
-          {/* Actions (owner only) */}
-          {isOwner && bid.status === "pending" && projectStatus === "open" && (
-            <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 flex-wrap">
-              {bid.adminStatus === "pending_admin" ? (
-                <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 px-3 py-1.5 text-yellow-600 text-xs w-full">
-                  <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                  Awaiting admin approval before you can accept
-                </div>
-              ) : bid.adminStatus === "rejected_admin" ? (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-1.5 text-destructive text-xs w-full">
-                  Admin rejected this bid
-                </div>
-              ) : (
-                <>
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white h-8 text-xs"
-                    disabled={updatingBid === bid._id}
-                    onClick={() => onAction(bid._id, "accepted")}
-                  >
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                    {updatingBid === bid._id ? "…" : "Accept"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30 h-8 text-xs"
-                    disabled={updatingBid === bid._id}
-                    onClick={() => onAction(bid._id, "rejected")}
-                  >
-                    <ThumbsDown className="h-3.5 w-3.5" />
-                    {updatingBid === bid._id ? "…" : "Reject"}
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -371,20 +398,56 @@ const ProjectDetail = () => {
   if (loadingProject) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-6">
-        <Skeleton className="h-5 w-28" />
-        <Skeleton className="h-8 w-2/3" />
-        <div className="flex gap-4">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-24" />
+        <div className="skeleton-shimmer h-4 w-20 rounded-md" />
+        <div className="skeleton-shimmer h-7 w-2/3 rounded-md" />
+        <div className="flex gap-3">
+          <div className="skeleton-shimmer h-8 w-20 rounded-full" />
+          <div className="skeleton-shimmer h-8 w-16 rounded-full" />
+        </div>
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-border pb-0">
+          <div className="skeleton-shimmer h-9 w-20 rounded-t-lg" />
+          <div className="skeleton-shimmer h-9 w-28 rounded-t-lg" />
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-4">
-            <Skeleton className="h-48 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
+            {/* Details card */}
+            <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+              <div className="skeleton-shimmer h-5 w-32 rounded-md" />
+              <div className="skeleton-shimmer h-3 w-full rounded-md" />
+              <div className="skeleton-shimmer h-3 w-5/6 rounded-md" />
+              <div className="skeleton-shimmer h-3 w-4/6 rounded-md" />
+            </div>
+            {/* Skills card */}
+            <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <div className="skeleton-shimmer h-4 w-28 rounded-md" />
+              <div className="flex gap-2 flex-wrap">
+                {[80,60,90,70,50].map((w, i) => (
+                  <div key={i} className={`skeleton-shimmer h-6 rounded-full`} style={{ width: w }} />
+                ))}
+              </div>
+            </div>
           </div>
           <div className="space-y-4">
-            <Skeleton className="h-56 rounded-xl" />
-            <Skeleton className="h-40 rounded-xl" />
+            {/* Sidebar action card */}
+            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div className="skeleton-shimmer h-12 w-full rounded-xl" />
+              <div className="skeleton-shimmer h-4 w-3/4 rounded-md" />
+              <div className="skeleton-shimmer h-4 w-2/4 rounded-md" />
+              <div className="skeleton-shimmer h-10 w-full rounded-lg" />
+            </div>
+            {/* Client card */}
+            <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="skeleton-shimmer h-11 w-11 rounded-xl shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <div className="skeleton-shimmer h-4 w-24 rounded-md" />
+                  <div className="skeleton-shimmer h-3 w-16 rounded-md" />
+                </div>
+              </div>
+              <div className="skeleton-shimmer h-3 w-full rounded-md" />
+              <div className="skeleton-shimmer h-3 w-2/3 rounded-md" />
+            </div>
           </div>
         </div>
       </div>
@@ -412,6 +475,8 @@ const ProjectDetail = () => {
       ? Math.round(bids.reduce((s, b) => s + b.amount, 0) / bids.length)
       : 0;
 
+  const hero = statusHero[project.status] ?? statusHero.open;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
       {/* Back link */}
@@ -423,89 +488,151 @@ const ProjectDetail = () => {
         Back
       </button>
 
+      {/* ── Animated status hero strip ── */}
+      <div className={`relative mb-5 overflow-hidden rounded-2xl border border-border bg-gradient-to-r ${hero.gradient} hero-gradient shadow-lg ${hero.glow}`}>
+        {/* floating dots decoration */}
+        <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 flex gap-2 opacity-30">
+          {[20,14,10,7].map((size, i) => (
+            <div key={i} className={`rounded-full ${hero.dot}`} style={{ width: size, height: size, animationDelay: `${i*0.4}s` }} />
+          ))}
+        </div>
+        <div className="px-6 py-4 flex flex-wrap items-center gap-3">
+          <div className={`h-3 w-3 rounded-full shadow-md animate-pulse ${hero.dot}`} />
+          <span className="font-heading text-sm font-bold text-foreground capitalize">
+            {project.status.replace("-", " ")} Project
+          </span>
+          {project.urgencyLevel && project.urgencyLevel !== "Normal" && (
+            <span className="flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-500/25 px-2.5 py-0.5 text-[11px] font-bold text-orange-600">
+              <Zap className="h-3 w-3" /> {project.urgencyLevel}
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground ml-auto">
+            Posted {project.createdAt}
+          </span>
+        </div>
+      </div>
+
       {/* ── Top header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground leading-snug">
-              {project.title}
-            </h1>
-            <Badge
-              variant="outline"
-              className={`shrink-0 capitalize ${statusStyles[project.status]}`}
-            >
-              {project.status.replace("-", " ")}
-            </Badge>
-            {project.urgencyLevel && project.urgencyLevel !== "Normal" && (
+      <div className="rounded-2xl border border-border bg-card p-5 mb-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Badges row */}
+            <div className="flex flex-wrap items-center gap-2 mb-2.5">
               <Badge
                 variant="outline"
-                className={`shrink-0 ${
-                  project.urgencyLevel === "Critical"
-                    ? "bg-destructive/10 text-destructive border-destructive/20"
-                    : "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
-                }`}
+                className={`capitalize text-[11px] font-bold tracking-wide px-2.5 py-0.5 ${statusStyles[project.status]}`}
               >
-                <Zap className="h-3 w-3 mr-1" />
-                {project.urgencyLevel}
+                {project.status.replace("-", " ")}
               </Badge>
-            )}
-          </div>
-          {project.location && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              {project.location}
-              {project.remoteFriendly && <span className="ml-1 text-green-600">· Remote OK</span>}
+              {project.urgencyLevel && project.urgencyLevel !== "Normal" && (
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] font-bold ${
+                    project.urgencyLevel === "Critical"
+                      ? "bg-destructive/10 text-destructive border-destructive/20"
+                      : "bg-orange-500/10 text-orange-600 border-orange-500/20"
+                  }`}
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  {project.urgencyLevel}
+                </Badge>
+              )}
+              {project.remoteFriendly && (
+                <Badge variant="outline" className="text-[11px] font-semibold bg-primary/8 text-primary/80 border-primary/25">
+                  Remote OK
+                </Badge>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Bids count + avg + actions */}
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="text-right">
-            <div className="flex items-center gap-3">
+            {/* Title */}
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground leading-snug mb-2">
+              {project.title}
+            </h1>
+
+            {/* Meta info */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              {project.location && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" /> {project.location}
+                </span>
+              )}
+              {project.projectType && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> {project.projectType}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <CalendarDays className="h-3 w-3" /> Posted {project.createdAt}
+              </span>
+            </div>
+          </div>
+
+          {/* Right: stats + actions */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Bid stats */}
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 px-4 py-2.5">
               <div className="text-center">
-                <p className="font-heading text-xl font-bold text-foreground">{project.bids}</p>
-                <p className="text-[11px] text-muted-foreground">Bids</p>
+                <p className="font-heading text-lg font-extrabold text-foreground leading-none">{project.bids}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Proposals</p>
               </div>
-              <div className="w-px h-8 bg-border" />
+              <div className="w-px h-7 bg-border" />
               <div className="text-center">
-                <p className="font-heading text-xl font-bold text-foreground">
+                <p className="font-heading text-lg font-extrabold text-foreground leading-none">
                   {avgBid > 0 ? `₹${avgBid.toLocaleString("en-IN")}` : "—"}
                 </p>
-                <p className="text-[11px] text-muted-foreground">Avg bid</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Avg bid</p>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="ghost" size="icon"
-              className={`h-9 w-9 ${bookmarked ? "text-primary" : "text-muted-foreground"}`}
-              onClick={() => setBookmarked((p) => !p)}
-            >
-              <Bookmark className={`h-4 w-4 ${bookmarked ? "fill-primary" : ""}`} />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" onClick={handleShare}>
-              <Share2 className="h-4 w-4" />
-            </Button>
+
+            {/* Icon actions */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost" size="icon"
+                className={`h-9 w-9 rounded-xl ${bookmarked ? "text-primary bg-primary/8" : "text-muted-foreground"}`}
+                onClick={() => setBookmarked((p) => !p)}
+              >
+                <Bookmark className={`h-4 w-4 ${bookmarked ? "fill-primary" : ""}`} />
+              </Button>
+              <Button
+                variant="ghost" size="icon"
+                className="h-9 w-9 rounded-xl text-muted-foreground"
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex border-b border-border mb-6">
+      <div className="flex items-center gap-1 border-b border-border mb-6">
         {(["details", "proposals"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2.5 text-sm font-semibold transition-colors capitalize border-b-2 -mb-px ${
+            className={`relative px-5 py-2.5 text-sm font-semibold transition-colors capitalize border-b-2 -mb-px rounded-t-sm ${
               activeTab === tab
                 ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
             }`}
           >
-            {tab === "proposals"
-              ? `Proposals${bids.length > 0 ? ` (${bids.length})` : ""}`
-              : "Details"}
+            {tab === "proposals" ? (
+              <span className="flex items-center gap-1.5">
+                Proposals
+                {bids.length > 0 && (
+                  <span className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] ${
+                    activeTab === "proposals"
+                      ? "bg-primary text-white"
+                      : "bg-secondary text-muted-foreground"
+                  }`}>
+                    {bids.length}
+                  </span>
+                )}
+              </span>
+            ) : (
+              "Details"
+            )}
           </button>
         ))}
       </div>
@@ -633,55 +760,61 @@ const ProjectDetail = () => {
           {/* Right: Sidebar */}
           <div className="space-y-4">
             {/* Budget + Bid action */}
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <div className="flex items-center gap-2">
-                <IndianRupee className="h-5 w-5 text-primary shrink-0" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Budget</p>
-                  <p className="font-bold text-foreground">
-                    ₹{project.budget.min.toLocaleString("en-IN")} – ₹{project.budget.max.toLocaleString("en-IN")}
-                  </p>
+            <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+              {/* Budget hero */}
+              <div className="bg-gradient-to-br from-primary/8 to-primary/4 border-b border-border/60 px-5 py-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Budget</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm text-primary font-bold">₹</span>
+                  <span className="font-heading text-2xl font-extrabold text-primary leading-none">
+                    {project.budget.min.toLocaleString("en-IN")}
+                  </span>
+                  <span className="text-muted-foreground mx-1 text-sm">–</span>
+                  <span className="font-heading text-2xl font-extrabold text-primary leading-none">
+                    {project.budget.max.toLocaleString("en-IN")}
+                  </span>
                 </div>
               </div>
 
-              {project.projectType && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary shrink-0" />
+              <div className="p-5 space-y-3">
+                {project.projectType && (
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Type</p>
+                      <p className="font-semibold text-sm text-foreground">{project.projectType}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <Users className="h-4 w-4 text-muted-foreground shrink-0" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Type</p>
-                    <p className="font-semibold text-sm">{project.projectType}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Proposals</p>
+                    <p className="font-semibold text-sm text-foreground">{project.bids} bids</p>
                   </div>
                 </div>
-              )}
 
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary shrink-0" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Proposals</p>
-                  <p className="font-semibold text-sm">{project.bids} bids</p>
-                </div>
-              </div>
-
-              {project.deadline && (
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Deadline</p>
-                    <p className="font-semibold text-sm">{project.deadline}</p>
+                {project.deadline && (
+                  <div className="flex items-center gap-3">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Deadline</p>
+                      <p className="font-semibold text-sm text-foreground">{project.deadline}</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {project.status === "open" && !isOwner && (
-                <div className="pt-2">
+                {project.status === "open" && !isOwner && (
+                <div className="pt-1">
                   {alreadyBid ? (
-                    <div className="flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-primary">
+                    <div className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 p-3 text-primary">
                       <CheckCircle2 className="h-5 w-5 shrink-0" />
-                      <span className="text-sm font-medium">Bid submitted</span>
+                      <span className="text-sm font-semibold">Proposal submitted</span>
                     </div>
                   ) : (
                     <Button
-                      className="w-full gap-2" size="lg"
+                      className="w-full gap-2 cta-pulse" size="lg"
                       onClick={() => {
                         if (!user) { navigate("/login"); return; }
                         setShowBidModal(true);
@@ -825,6 +958,7 @@ const ProjectDetail = () => {
                   )}
                 </>
               )}
+              </div>{/* /p-5 space-y-3 */}
             </div>
 
             {/* About the Client */}
@@ -920,7 +1054,7 @@ const ProjectDetail = () => {
                 </p>
                 {project.status === "open" && !isOwner && !alreadyBid && (
                   <Button
-                    className="mt-4 gap-2"
+                    className="mt-4 gap-2 cta-pulse"
                     onClick={() => {
                       if (!user) { navigate("/login"); return; }
                       setShowBidModal(true);
@@ -931,15 +1065,16 @@ const ProjectDetail = () => {
                 )}
               </div>
             ) : (
-              bids.map((bid) => (
-                <BidCard
-                  key={bid._id}
-                  bid={bid}
-                  isOwner={isOwner}
-                  projectStatus={project.status}
-                  updatingBid={updatingBid}
-                  onAction={handleBidAction}
-                />
+              bids.map((bid, i) => (
+                <div key={bid._id} className="bid-enter" style={{ animationDelay: `${i * 0.07}s` }}>
+                  <BidCard
+                    bid={bid}
+                    isOwner={isOwner}
+                    projectStatus={project.status}
+                    updatingBid={updatingBid}
+                    onAction={handleBidAction}
+                  />
+                </div>
               ))
             )}
           </div>
@@ -972,13 +1107,13 @@ const ProjectDetail = () => {
               {project.status === "open" && !isOwner && (
                 <div className="mt-4">
                   {alreadyBid ? (
-                    <div className="flex items-center gap-2 rounded-lg bg-primary/10 p-3 text-primary text-sm">
+                    <div className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 p-3 text-primary text-sm">
                       <CheckCircle2 className="h-4 w-4 shrink-0" />
-                      Bid submitted
+                      Proposal submitted
                     </div>
                   ) : (
                     <Button
-                      className="w-full gap-2"
+                      className="w-full gap-2 cta-pulse"
                       onClick={() => {
                         if (!user) { navigate("/login"); return; }
                         setShowBidModal(true);

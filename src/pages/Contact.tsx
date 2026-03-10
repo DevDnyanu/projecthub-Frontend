@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -19,11 +20,27 @@ const Contact = () => {
       return;
     }
     setSending(true);
-    // Simulate sending — replace with real API call when ready
-    await new Promise((r) => setTimeout(r, 1200));
-    setSending(false);
-    toast({ title: "Message sent!", description: "We'll get back to you within 24 hours." });
-    setForm({ name: "", email: "", subject: "", message: "" });
+    try {
+      await api.post("/contact", {
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+      });
+      toast({
+        title: "Message sent!",
+        description: "We'll get back to you within 24 hours. Check your inbox for a confirmation.",
+      });
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err) {
+      toast({
+        title: "Failed to send message",
+        description: err instanceof Error ? err.message : "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>

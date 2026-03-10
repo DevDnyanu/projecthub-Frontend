@@ -12,14 +12,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Check, X, Eye, EyeOff, LayoutDashboard, FolderOpen, Users,
+  Check, X, Eye, LayoutDashboard, FolderOpen, Users,
   Settings, LogOut, BarChart3, Shield, Bell, CheckCircle2,
   TrendingUp, DollarSign, Gavel, Clock3, CreditCard, ArrowRight, IndianRupee,
-  Camera, Lock, Save, User as UserIcon,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -44,13 +40,12 @@ const PIE_COLORS = [
 ];
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: "Overview",     id: "overview"   },
-  { icon: FolderOpen,      label: "Projects",     id: "projects"   },
-  { icon: Gavel,           label: "Bids",         id: "bids"       },
-  { icon: CreditCard,      label: "Payments",     id: "payments"   },
-  { icon: BarChart3,       label: "Analytics",    id: "analytics"  },
-  { icon: Bell,            label: "Notifications",id: "notifications" },
-  { icon: Settings,        label: "Settings",     id: "settings"   },
+  { icon: LayoutDashboard, label: "Overview",      id: "overview"       },
+  { icon: FolderOpen,      label: "Projects",      id: "projects"       },
+  { icon: Gavel,           label: "Bids",          id: "bids"           },
+  { icon: CreditCard,      label: "Payments",      id: "payments"       },
+  { icon: BarChart3,       label: "Analytics",     id: "analytics"      },
+  { icon: Bell,            label: "Notifications", id: "notifications"  },
 ];
 
 const adminStatusStyles: Record<string, string> = {
@@ -361,107 +356,6 @@ const AdminDashboard = () => {
     navigate("/login");
   };
 
-  // ── Settings tab state ──
-  const [settingsName,    setSettingsName]    = useState(user?.name  ?? "");
-  const [settingsEmail,   setSettingsEmail]   = useState(user?.email ?? "");
-  const [avatarFile,      setAvatarFile]      = useState<File | null>(null);
-  const [avatarPreview,   setAvatarPreview]   = useState<string | null>(null);
-  const [savingProfile,   setSavingProfile]   = useState(false);
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword,      setNewPassword]     = useState("");
-  const [confirmPassword,  setConfirmPassword] = useState("");
-  const [savingPassword,   setSavingPassword]  = useState(false);
-  const [showCurrentPw,    setShowCurrentPw]   = useState(false);
-  const [showNewPw,        setShowNewPw]       = useState(false);
-  const [showConfirmPw,    setShowConfirmPw]   = useState(false);
-
-  // Sync form when user changes (e.g. after save)
-  useEffect(() => {
-    if (user) {
-      setSettingsName(user.name);
-      setSettingsEmail(user.email);
-    }
-  }, [user]);
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 2 MB allowed", variant: "destructive" });
-      return;
-    }
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-  };
-
-  const handleSaveProfile = async () => {
-    if (!settingsName.trim()) {
-      toast({ title: "Name is required", variant: "destructive" });
-      return;
-    }
-    if (!settingsEmail.trim()) {
-      toast({ title: "Email is required", variant: "destructive" });
-      return;
-    }
-    setSavingProfile(true);
-    try {
-      // 1. Upload avatar if changed
-      if (avatarFile) {
-        const formData = new FormData();
-        formData.append("avatar", avatarFile);
-        const { avatar } = await api.patchForm<{ avatar: string }>("/users/me/avatar", formData);
-        updateAvatar(avatar);
-        setAvatarFile(null);
-        setAvatarPreview(null);
-      }
-
-      // 2. Update name / email if changed
-      const nameChanged  = settingsName.trim()  !== user?.name;
-      const emailChanged = settingsEmail.trim() !== user?.email;
-      if (nameChanged || emailChanged) {
-        const updated = await api.patch<{ name: string; email: string }>("/users/me/profile", {
-          name:  settingsName.trim(),
-          email: settingsEmail.trim(),
-        });
-        updateUser({ name: updated.name, email: updated.email });
-      }
-
-      toast({ title: "Profile updated successfully" });
-    } catch (err) {
-      toast({ title: "Update failed", description: err instanceof Error ? err.message : "Error", variant: "destructive" });
-    } finally {
-      setSavingProfile(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast({ title: "All fields are required", variant: "destructive" });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast({ title: "Password too short", description: "Minimum 6 characters required", variant: "destructive" });
-      return;
-    }
-    setSavingPassword(true);
-    try {
-      await api.patch("/users/me/change-password", { currentPassword, newPassword });
-      toast({ title: "Password changed successfully" });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      toast({ title: "Failed", description: err instanceof Error ? err.message : "Error", variant: "destructive" });
-    } finally {
-      setSavingPassword(false);
-    }
-  };
-
   // Same stat cards for everyone
   const statCards = stats
     ? [
@@ -513,7 +407,14 @@ const AdminDashboard = () => {
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-3">
+        <div className="border-t border-sidebar-border p-3 space-y-1">
+          <Link
+            to="/settings"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
@@ -526,6 +427,25 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
+
+        {/* Mobile greeting strip — above tab nav */}
+        <div className="lg:hidden px-4 py-3 border-b border-border/40 bg-card flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              Welcome back, <span className="text-primary">{user?.name?.split(" ")[0]}</span> 👋
+            </p>
+            <p className="text-xs text-muted-foreground">Here's what's happening today</p>
+          </div>
+          <Badge
+            variant="outline"
+            className={isAdmin
+              ? "gap-1 text-primary border-primary/30 bg-primary/5 text-[11px]"
+              : "gap-1 text-muted-foreground border-border bg-muted/40 text-[11px]"}
+          >
+            <Shield className="h-2.5 w-2.5" />
+            {isAdmin ? "Admin" : "View only"}
+          </Badge>
+        </div>
 
         {/* Mobile Tab Navigation — only visible below lg */}
         <div className="lg:hidden sticky top-16 z-40 border-b bg-card/95 backdrop-blur overflow-x-auto">
@@ -565,13 +485,11 @@ const AdminDashboard = () => {
                   ? "Dashboard Overview"
                   : sidebarItems.find((i) => i.id === activeTab)?.label}
               </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {activeTab === "settings"
-                  ? "Manage your account, profile photo and password."
-                  : `Welcome back, ${user?.name}. Here's what's happening today.`}
+              <p className="mt-1 text-sm text-muted-foreground hidden sm:block">
+                {`Welcome back, ${user?.name}. Here's what's happening today.`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <Badge
                 variant="outline"
                 className={isAdmin
@@ -581,15 +499,11 @@ const AdminDashboard = () => {
                 <Shield className="h-3 w-3" />
                 {isAdmin ? "Admin" : "View only"}
               </Badge>
-              <Button variant="outline" size="sm" className="lg:hidden gap-2" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
             </div>
           </div>
 
-          {/* View-only notice for non-admins — hidden on settings */}
-          {!isAdmin && activeTab !== "settings" && (
+          {/* View-only notice for non-admins */}
+          {!isAdmin && (
             <div className="mb-6 flex items-center gap-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
               <Eye className="h-5 w-5 shrink-0 text-yellow-600" />
               <p className="text-sm text-yellow-600 dark:text-yellow-400">
@@ -598,8 +512,8 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* Stat Cards — hidden on settings tab */}
-          {activeTab !== "settings" && <div className="mb-8">
+          {/* Stat Cards */}
+          {<div className="mb-8">
             {loadingStats ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -1118,313 +1032,6 @@ const AdminDashboard = () => {
               </div>
             );
           })()}
-
-          {/* ── Settings Tab ── */}
-          {activeTab === "settings" && (
-            <div className="max-w-2xl space-y-6">
-
-              {/* ── Profile banner ── */}
-              <Card className="overflow-hidden">
-                {/* Gradient top strip */}
-                <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
-
-                <div className="px-6 pb-6">
-                  {/* Avatar overlapping the strip */}
-                  <div className="relative -mt-12 mb-4 flex items-end gap-4">
-                    <div className="relative shrink-0">
-                      <Avatar className="h-20 w-20 ring-4 ring-background shadow-lg">
-                        <AvatarImage src={avatarPreview ?? user?.avatar} />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                          {user?.name?.[0]?.toUpperCase() ?? "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      {/* Camera overlay button */}
-                      <label
-                        htmlFor="avatar-upload"
-                        className="absolute bottom-0 right-0 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-primary shadow-md hover:bg-primary/90 transition-colors"
-                        title="Change photo"
-                      >
-                        <Camera className="h-3.5 w-3.5 text-primary-foreground" />
-                      </label>
-                      <input
-                        id="avatar-upload"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={handleAvatarChange}
-                      />
-                    </div>
-
-                    <div className="pb-1">
-                      <p className="font-heading text-lg font-bold text-foreground leading-tight">{user?.name}</p>
-                      <p className="text-sm text-muted-foreground">{user?.email}</p>
-                      <Badge
-                        variant="outline"
-                        className={`mt-1.5 text-[10px] gap-1 ${isAdmin ? "border-primary/30 text-primary bg-primary/5" : "border-border text-muted-foreground"}`}
-                      >
-                        <Shield className="h-2.5 w-2.5" />
-                        {isAdmin ? "Admin" : "Member"}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Preview indicator + remove */}
-                  {avatarPreview && (
-                    <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                      <div className="flex items-center gap-2 text-sm text-primary">
-                        <Camera className="h-3.5 w-3.5" />
-                        <span>New photo selected — save to apply</span>
-                      </div>
-                      <button
-                        onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
-                        className="text-xs text-destructive hover:underline"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-
-                  {!avatarPreview && (
-                    <p className="text-xs text-muted-foreground">
-                      Click the camera icon on your photo to upload a new one. JPG, PNG or WebP — max 2 MB.
-                    </p>
-                  )}
-                </div>
-              </Card>
-
-              {/* ── Personal Information ── */}
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <UserIcon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-sm font-semibold text-foreground">Personal Information</h3>
-                    <p className="text-xs text-muted-foreground">Update your display name and email</p>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="settings-name" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Full Name
-                    </Label>
-                    <Input
-                      id="settings-name"
-                      value={settingsName}
-                      onChange={(e) => setSettingsName(e.target.value)}
-                      placeholder="Your full name"
-                      className="h-10"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="settings-email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Email Address
-                    </Label>
-                    <Input
-                      id="settings-email"
-                      type="email"
-                      value={settingsEmail}
-                      onChange={(e) => setSettingsEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="h-10"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Changing your email will update your login credentials.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex justify-end">
-                  <Button
-                    onClick={handleSaveProfile}
-                    disabled={savingProfile}
-                    className="gap-2 min-w-[140px]"
-                  >
-                    {savingProfile
-                      ? <><span className="h-4 w-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />Saving…</>
-                      : <><Save className="h-4 w-4" />Save Changes</>
-                    }
-                  </Button>
-                </div>
-              </Card>
-
-              {/* ── Change Password ── */}
-              <Card className="p-6">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Lock className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-sm font-semibold text-foreground">Change Password</h3>
-                    <p className="text-xs text-muted-foreground">Use a strong password — at least 6 characters</p>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="space-y-4">
-                  {/* Current Password */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="current-pw" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Current Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="current-pw"
-                        type={showCurrentPw ? "text" : "password"}
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="h-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPw((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* New Password */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="new-pw" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      New Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="new-pw"
-                        type={showNewPw ? "text" : "password"}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="h-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPw((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    {/* Strength bar */}
-                    {newPassword && (
-                      <div className="space-y-1">
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4].map((lvl) => {
-                            const strength = newPassword.length < 6 ? 1 : newPassword.length < 8 ? 2 : /[A-Z]/.test(newPassword) && /[0-9]/.test(newPassword) ? 4 : 3;
-                            return (
-                              <div
-                                key={lvl}
-                                className={`h-1 flex-1 rounded-full transition-colors ${
-                                  lvl <= strength
-                                    ? strength === 1 ? "bg-destructive"
-                                    : strength === 2 ? "bg-yellow-500"
-                                    : strength === 3 ? "bg-blue-500"
-                                    : "bg-success"
-                                    : "bg-muted"
-                                }`}
-                              />
-                            );
-                          })}
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          {newPassword.length < 6 ? "Too short"
-                            : newPassword.length < 8 ? "Weak"
-                            : /[A-Z]/.test(newPassword) && /[0-9]/.test(newPassword) ? "Strong"
-                            : "Good"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="confirm-pw" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Confirm New Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="confirm-pw"
-                        type={showConfirmPw ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className={`h-10 pr-10 ${confirmPassword && newPassword !== confirmPassword ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPw((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    {confirmPassword && newPassword !== confirmPassword && (
-                      <p className="text-xs text-destructive flex items-center gap-1">
-                        <X className="h-3 w-3" /> Passwords don't match
-                      </p>
-                    )}
-                    {confirmPassword && newPassword === confirmPassword && newPassword.length >= 6 && (
-                      <p className="text-xs text-success flex items-center gap-1">
-                        <Check className="h-3 w-3" /> Passwords match
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-5 flex justify-end">
-                  <Button
-                    onClick={handleChangePassword}
-                    disabled={savingPassword}
-                    variant="outline"
-                    className="gap-2 min-w-[160px]"
-                  >
-                    {savingPassword
-                      ? <><span className="h-4 w-4 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin" />Updating…</>
-                      : <><Lock className="h-4 w-4" />Update Password</>
-                    }
-                  </Button>
-                </div>
-              </Card>
-
-              {/* ── Danger Zone ── */}
-              <Card className="p-6 border-destructive/20">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-                    <LogOut className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-sm font-semibold text-foreground">Sign Out</h3>
-                    <p className="text-xs text-muted-foreground">Log out from your account on this device</p>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    You'll need to sign in again to access your dashboard.
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive self-start sm:self-auto"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign Out
-                  </Button>
-                </div>
-              </Card>
-
-            </div>
-          )}
 
           {/* Projects Table — same for everyone, actions admin-only */}
           {(activeTab === "overview" || activeTab === "projects") && (

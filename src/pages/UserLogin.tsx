@@ -44,9 +44,9 @@ const DEMO_CARDS: DemoCard[] = [
 const UserLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, signup, isLoggedIn, user } = useAuth();
+  const { login, complete2faLogin, signup, isLoggedIn, user } = useAuth();
 
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "2fa">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -54,6 +54,12 @@ const UserLogin = () => {
   const [loading, setLoading] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resending, setResending] = useState(false);
+
+  // 2FA step-2 state
+  const [tfaTempToken, setTfaTempToken] = useState("");
+  const [tfaCode, setTfaCode] = useState("");
+  const [tfaError, setTfaError] = useState("");
+  const [tfaLoading, setTfaLoading] = useState(false);
 
   // Forgot password — OTP flow
   const [forgotEmail, setForgotEmail]         = useState("");
@@ -85,23 +91,49 @@ const UserLogin = () => {
     setNeedsVerification(false);
     try {
       const result = await login(email, password);
-      if (result.success) {
-        if (result.needsVerification) {
-          setNeedsVerification(true);
-          toast({
-            title: "Signed in",
-            description: "Please verify your email to post projects.",
-          });
-        } else {
-          toast({ title: "Welcome back!", description: "You're now signed in to ProjectHub." });
-        }
-      } else {
+      if (!result.success) {
         toast({ title: "Sign in failed", description: "Incorrect email or password.", variant: "destructive" });
+        return;
+      }
+      // 2FA required — move to step-2 form
+      if (result.requires2FA) {
+        setTfaTempToken(result.tempToken);
+        setTfaCode("");
+        setTfaError("");
+        setMode("2fa");
+        return;
+      }
+      // Normal login complete
+      if (result.needsVerification) {
+        setNeedsVerification(true);
+        toast({ title: "Signed in", description: "Please verify your email to post projects." });
+      } else {
+        toast({ title: "Welcome back!", description: "You're now signed in to ProjectHub." });
       }
     } catch {
       toast({ title: "Sign in failed", description: "Network error. Please try again.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handle2faSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (tfaCode.length < 6) { setTfaError("Enter the 6-digit code from your app."); return; }
+    setTfaLoading(true);
+    setTfaError("");
+    try {
+      const result = await complete2faLogin(tfaTempToken, tfaCode);
+      if (!result.success) {
+        setTfaError("Invalid code. Please try again.");
+        return;
+      }
+      toast({ title: "Welcome back!", description: "You're now signed in to ProjectHub." });
+    } catch {
+      setTfaError("Something went wrong. Please try again.");
+    } finally {
+      setTfaLoading(false);
+    }
   };
 
   const handleResendVerification = async () => {
@@ -192,7 +224,16 @@ const UserLogin = () => {
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
       {/* ── Left panel – branding ── */}
-      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between bg-primary p-12 text-primary-foreground">
+      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 text-primary-foreground relative overflow-hidden">
+        {/* HD bird photo */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1200&q=80')" }}
+        />
+        {/* Gradient overlay — dark at top/bottom for text, transparent in middle so bird shows fully */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(30,64,175,0.82) 0%, rgba(30,64,175,0.25) 35%, rgba(30,64,175,0.25) 65%, rgba(10,30,80,0.88) 100%)" }} />
+        {/* All content sits above the image */}
+        <div className="relative z-10 flex flex-col justify-between h-full">
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur">
             <Briefcase className="h-5 w-5" />
@@ -220,6 +261,7 @@ const UserLogin = () => {
         </div>
 
         <p className="text-xs text-primary-foreground/40">© 2025 ProjectHub. All rights reserved.</p>
+        </div>{/* end z-10 */}
       </div>
 
       {/* ── Right panel – form ── */}
@@ -240,10 +282,12 @@ const UserLogin = () => {
                 {mode === "login"  && <LogIn     className="h-5 w-5 text-primary" />}
                 {mode === "signup" && <UserPlus  className="h-5 w-5 text-primary" />}
                 {mode === "forgot" && <KeyRound  className="h-5 w-5 text-primary" />}
+                {mode === "2fa"    && <Shield    className="h-5 w-5 text-primary" />}
               </div>
               <h1 className="text-2xl font-bold text-foreground">
-                {mode === "login"  ? "Sign in to your account"
-                : mode === "signup" ? "Create your account"
+                {mode === "login"   ? "Sign in to your account"
+                : mode === "signup"  ? "Create your account"
+                : mode === "2fa"     ? "Two-factor verification"
                 : "Reset your password"}
               </h1>
             </div>
@@ -264,7 +308,7 @@ const UserLogin = () => {
                     onClick={() => { setMode(mode === "login" ? "signup" : "login"); setEmail(""); setPassword(""); setName(""); }}
                     className="font-medium text-primary hover:underline"
                   >
-                    {mode === "login" ? "Sign up for free" : "Sign in"}
+                    {mode === "login" ? "Create an account" : "Sign in"}
                   </button>
                 </>
               )}
@@ -285,6 +329,62 @@ const UserLogin = () => {
                 {resending ? "Sending…" : "Resend verification email"}
               </button>
             </div>
+          )}
+
+          {/* ── 2FA step-2 ── */}
+          {mode === "2fa" && (
+            <form onSubmit={handle2faSubmit} className="space-y-5">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+                Open your authenticator app and enter the{" "}
+                <span className="font-semibold text-foreground">6-digit code</span> shown for this account.
+                You can also use a backup code (format: <span className="font-mono text-xs">XXXX-XXXX-XXXX</span>).
+              </div>
+
+              {tfaError && (
+                <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                  <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-sm text-destructive">{tfaError}</p>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label>Authenticator code</Label>
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={6}
+                    value={tfaCode}
+                    onChange={(val) => { setTfaCode(val); setTfaError(""); }}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              <Button type="submit" size="lg" className="w-full gap-2" disabled={tfaLoading || tfaCode.length !== 6}>
+                {tfaLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Verifying…
+                  </span>
+                ) : (
+                  <>Verify &amp; Sign In <ArrowRight className="h-4 w-4" /></>
+                )}
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                <button type="button" onClick={() => { setMode("login"); setTfaTempToken(""); setTfaCode(""); setTfaError(""); }}
+                  className="text-primary hover:underline inline-flex items-center gap-1">
+                  <ArrowLeft className="h-3 w-3" /> Back to sign in
+                </button>
+              </p>
+            </form>
           )}
 
           {/* ── Forgot password — OTP flow ── */}
@@ -464,7 +564,7 @@ const UserLogin = () => {
           )}
 
           {/* ── Login / Signup form ── */}
-          {mode !== "forgot" && (
+          {mode !== "forgot" && mode !== "2fa" && (
           <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-4">
             {mode === "signup" && (
               <div className="space-y-1.5">
@@ -508,7 +608,7 @@ const UserLogin = () => {
                 {mode === "login" && (
                   <button
                     type="button"
-                    onClick={() => { setMode("forgot"); setForgotEmail(email); setForgotSent(false); }}
+                    onClick={() => { setMode("forgot"); setForgotEmail(email); setForgotStep("email"); }}
                     className="text-xs text-primary hover:underline"
                   >
                     Forgot password?
@@ -561,7 +661,7 @@ const UserLogin = () => {
           )} {/* end login/signup form conditional */}
 
           {/* Demo credentials */}
-          {mode !== "forgot" && (
+          {mode !== "forgot" && mode !== "2fa" && (
           <div className="mt-6">
             <div className="relative">
               <Separator />
