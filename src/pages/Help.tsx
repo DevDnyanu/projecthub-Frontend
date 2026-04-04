@@ -10,7 +10,7 @@ const FAQS: { category: string; icon: React.ElementType; items: { q: string; a: 
     items: [
       { q: "How do I create an account?",          a: "Click 'Sign In' in the top navbar and choose 'Create account'. Fill in your name, email and password. You'll receive a verification email to activate your account." },
       { q: "Is ProjectHub free to use?",           a: "Yes! Creating an account and browsing projects is completely free. We only charge a small service fee when a project is successfully completed." },
-      { q: "Can I be both a client and freelancer?", a: "Absolutely. One account lets you post projects as a client and bid on projects as a freelancer. Your role is determined by what you're doing, not your account type." },
+      { q: "Can I be both a client and expert?", a: "Absolutely. One account lets you post projects as a client and bid on projects as an expert. Your role is determined by what you're doing, not your account type." },
     ],
   },
   {
@@ -35,7 +35,7 @@ const FAQS: { category: string; icon: React.ElementType; items: { q: string; a: 
     category: "Payments & Safety",
     icon: CreditCard,
     items: [
-      { q: "How do payments work?",              a: "ProjectHub uses a milestone-based payment system. Clients fund milestones upfront, and funds are released to freelancers upon milestone completion." },
+      { q: "How do payments work?",              a: "ProjectHub uses a milestone-based payment system. Clients fund milestones upfront, and funds are released to experts upon milestone completion." },
       { q: "Is my payment information safe?",    a: "Yes. All payment data is encrypted and processed through RBI-compliant payment gateways. We never store raw card data." },
       { q: "What if there's a dispute?",         a: "Contact our support team and we'll mediate. We have a clear dispute resolution process and always aim for a fair outcome for both parties." },
     ],
@@ -46,7 +46,7 @@ const FAQS: { category: string; icon: React.ElementType; items: { q: string; a: 
     items: [
       { q: "How are freelancers verified?",      a: "All users go through email verification. Premium verified badges are available after identity verification and portfolio review." },
       { q: "How do I report a user?",            a: "Click the 'Report' button on any user profile or project. Our trust & safety team reviews all reports within 24 hours." },
-      { q: "What is the rating system?",         a: "After a project is completed, clients rate the freelancer (1–5 stars). Ratings are public and help build trust across the platform." },
+      { q: "What is the rating system?",         a: "After a project is completed, clients rate the expert (1–5 stars). Ratings are public and help build trust across the platform." },
     ],
   },
 ];

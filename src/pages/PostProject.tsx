@@ -258,7 +258,7 @@ const PostProject = () => {
           </div>
           <div>
             <h1 className="font-heading text-2xl font-bold text-white leading-tight">Post a Project</h1>
-            <p className="text-white/70 text-sm mt-0.5">Get proposals from top freelancers within hours</p>
+            <p className="text-white/70 text-sm mt-0.5">Get proposals from top experts within hours</p>
           </div>
           <div className="ml-auto hidden sm:flex items-center gap-6 text-white/80 text-sm">
             <div className="text-center">
@@ -671,7 +671,7 @@ const PostProject = () => {
                     <Label htmlFor="remote" className={`cursor-pointer font-semibold text-sm ${remoteFriendly ? "text-primary" : "text-foreground"}`}>
                       Remote Friendly
                     </Label>
-                    <p className="text-xs text-muted-foreground">Freelancers from anywhere can apply</p>
+                    <p className="text-xs text-muted-foreground">Experts from anywhere can apply</p>
                   </div>
                   {remoteFriendly && (
                     <span className="ml-auto text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">ON</span>

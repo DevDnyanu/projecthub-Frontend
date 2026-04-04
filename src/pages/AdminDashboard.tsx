@@ -15,6 +15,7 @@ import {
   Check, X, Eye, LayoutDashboard, FolderOpen, Users,
   Settings, LogOut, BarChart3, Shield, Bell, CheckCircle2,
   TrendingUp, DollarSign, Gavel, Clock3, CreditCard, ArrowRight, IndianRupee,
+  Clock, CheckCheck, AlertCircle, Wallet, LockKeyhole, ArrowDownCircle, ArrowUpCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -44,6 +45,7 @@ const sidebarItems = [
   { icon: FolderOpen,      label: "Projects",      id: "projects"       },
   { icon: Gavel,           label: "Bids",          id: "bids"           },
   { icon: CreditCard,      label: "Payments",      id: "payments"       },
+  { icon: Wallet,          label: "Wallets",       id: "wallets"        },
   { icon: BarChart3,       label: "Analytics",     id: "analytics"      },
   { icon: Bell,            label: "Notifications", id: "notifications"  },
 ];
@@ -82,6 +84,26 @@ interface AdminBid {
   createdAt: string;
   bidder: { _id: string; name: string; avatar?: string; rating: number };
   project: { _id: string; title: string; category: string; budget: { min: number; max: number } };
+}
+
+interface WalletUser {
+  userId:         string;
+  name:           string;
+  email:          string;
+  role:           string;
+  joinedAt:       string;
+  walletBalance:  number;
+  totalDeposited: number;
+  totalWithdrawn: number;
+  escrowLocked:   number;
+  txCount:        number;
+}
+
+interface WalletSummary {
+  totalPlatformBalance: number;
+  totalEscrowLocked:    number;
+  totalDeposited:       number;
+  totalWithdrawn:       number;
 }
 
 interface AdminPayment {
@@ -154,6 +176,15 @@ const AdminDashboard = () => {
   const [payments,         setPayments]         = useState<AdminPayment[]>([]);
   const [loadingPayments,  setLoadingPayments]  = useState(false);
 
+  type AdminNotif = { _id: string; type: string; message: string; read: boolean; createdAt: string; projectTitle: string; actorName: string; };
+  const [adminNotifs,        setAdminNotifs]        = useState<AdminNotif[]>([]);
+  const [loadingNotifs,      setLoadingNotifs]      = useState(false);
+
+  const [walletUsers,        setWalletUsers]        = useState<WalletUser[]>([]);
+  const [walletSummary,      setWalletSummary]      = useState<WalletSummary | null>(null);
+  const [loadingWallets,     setLoadingWallets]     = useState(false);
+  const [walletSearch,       setWalletSearch]       = useState("");
+
   const isAdmin = user?.is_admin === true;
 
   // Stats — accessible to all logged-in users
@@ -215,6 +246,47 @@ const AdminDashboard = () => {
       setLoadingProjects(false);
     }
   }, []);
+
+  const fetchWallets = useCallback(async () => {
+    setLoadingWallets(true);
+    try {
+      const data = await api.get<{ users: WalletUser[]; summary: WalletSummary }>("/admin/wallets");
+      setWalletUsers(data.users);
+      setWalletSummary(data.summary);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingWallets(false);
+    }
+  }, []);
+
+  const fetchAdminNotifs = useCallback(async () => {
+    setLoadingNotifs(true);
+    try {
+      const data = await api.get<AdminNotif[]>("/admin/notifications");
+      setAdminNotifs(data);
+    } catch { /* silently fail */ }
+    finally { setLoadingNotifs(false); }
+  }, []);
+
+  const markNotifRead = async (id: string) => {
+    try {
+      await api.patch(`/admin/notifications/${id}/read`);
+      setAdminNotifs(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+    } catch { /* ignore */ }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await api.patch("/admin/notifications/read-all");
+      setAdminNotifs(prev => prev.map(n => ({ ...n, read: true })));
+    } catch { /* ignore */ }
+  };
+
+  useEffect(() => {
+    if (activeTab === "notifications") fetchAdminNotifs();
+    if (activeTab === "wallets" && isAdmin) fetchWallets();
+  }, [activeTab, fetchAdminNotifs, fetchWallets, isAdmin]);
 
   useEffect(() => {
     // Stats and analytics are visible to all logged-in users
@@ -367,9 +439,9 @@ const AdminDashboard = () => {
     : [];
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col border-r bg-sidebar-background text-sidebar-foreground">
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r bg-sidebar-background text-sidebar-foreground overflow-y-auto">
         <div className="flex items-center gap-3 border-b border-sidebar-border px-6 py-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Shield className="h-5 w-5 text-primary-foreground" />
@@ -751,7 +823,7 @@ const AdminDashboard = () => {
               <div className="border-b px-4 sm:px-6 py-4 flex items-center justify-between">
                 <div>
                   <h2 className="font-heading text-base font-semibold text-foreground">Bid Management</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Review and approve or reject freelancer bids</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Review and approve or reject expert bids</p>
                 </div>
                 <Badge variant="secondary" className="text-xs">
                   {bids.filter(b => b?.adminStatus === "pending_admin").length} pending
@@ -989,7 +1061,7 @@ const AdminDashboard = () => {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <span className="text-xs text-muted-foreground">Freelancer: </span>
+                                  <span className="text-xs text-muted-foreground">Expert: </span>
                                   <span className="text-xs font-semibold text-foreground">{payment.freelancer?.name}</span>
                                 </div>
                               </div>
@@ -1032,6 +1104,135 @@ const AdminDashboard = () => {
               </div>
             );
           })()}
+
+          {/* ── Wallets Tab — admin only ── */}
+          {activeTab === "wallets" && isAdmin && (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              {walletSummary && (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Card className="p-5 border-primary/30 bg-primary/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-muted-foreground">Platform Balance</p>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
+                        <Wallet className="h-4 w-4 text-primary" />
+                      </div>
+                    </div>
+                    <p className="font-heading text-2xl font-bold text-primary">₹{walletSummary.totalPlatformBalance.toLocaleString("en-IN")}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Total in all wallets</p>
+                  </Card>
+                  <Card className="p-5 border-yellow-500/30 bg-yellow-500/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-muted-foreground">Escrow Locked</p>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500/15">
+                        <LockKeyhole className="h-4 w-4 text-yellow-500" />
+                      </div>
+                    </div>
+                    <p className="font-heading text-2xl font-bold text-yellow-500">₹{walletSummary.totalEscrowLocked.toLocaleString("en-IN")}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">In active escrows</p>
+                  </Card>
+                  <Card className="p-5 border-success/30 bg-success/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-muted-foreground">Total Deposited</p>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/15">
+                        <ArrowDownCircle className="h-4 w-4 text-success" />
+                      </div>
+                    </div>
+                    <p className="font-heading text-2xl font-bold text-success">₹{walletSummary.totalDeposited.toLocaleString("en-IN")}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Via Razorpay</p>
+                  </Card>
+                  <Card className="p-5 border-destructive/30 bg-destructive/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-muted-foreground">Total Withdrawn</p>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15">
+                        <ArrowUpCircle className="h-4 w-4 text-destructive" />
+                      </div>
+                    </div>
+                    <p className="font-heading text-2xl font-bold text-destructive">₹{walletSummary.totalWithdrawn.toLocaleString("en-IN")}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">By experts</p>
+                  </Card>
+                </div>
+              )}
+
+              {/* Users Wallet Table */}
+              <Card className="overflow-hidden">
+                <div className="border-b px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                  <div>
+                    <h2 className="font-heading text-base font-semibold text-foreground">User Wallets</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">Balance & transaction summary per user</p>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by name or email…"
+                    value={walletSearch}
+                    onChange={(e) => setWalletSearch(e.target.value)}
+                    className="w-full sm:w-56 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+                  />
+                </div>
+
+                {loadingWallets ? (
+                  <div className="space-y-3 p-4">
+                    {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
+                  </div>
+                ) : walletUsers.length === 0 ? (
+                  <div className="px-6 py-16 text-center">
+                    <Wallet className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="font-medium text-foreground">No wallet data found</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="text-[11px] uppercase tracking-wider">
+                          <TableHead>User</TableHead>
+                          <TableHead className="text-right">Wallet Balance</TableHead>
+                          <TableHead className="text-right">Deposited</TableHead>
+                          <TableHead className="text-right">Withdrawn</TableHead>
+                          <TableHead className="text-right">Escrow Locked</TableHead>
+                          <TableHead className="text-right">Tx Count</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {walletUsers
+                          .filter((u) =>
+                            u.name.toLowerCase().includes(walletSearch.toLowerCase()) ||
+                            u.email.toLowerCase().includes(walletSearch.toLowerCase())
+                          )
+                          .sort((a, b) => b.walletBalance - a.walletBalance)
+                          .map((u) => (
+                            <TableRow key={u.userId} className="hover:bg-secondary/40 transition-colors">
+                              <TableCell>
+                                <div>
+                                  <p className="font-semibold text-sm text-foreground">{u.name}</p>
+                                  <p className="text-[11px] text-muted-foreground">{u.email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className={`font-bold text-sm ${u.walletBalance > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                                  ₹{u.walletBalance.toLocaleString("en-IN")}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-sm text-success font-medium">₹{u.totalDeposited.toLocaleString("en-IN")}</span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-sm text-destructive font-medium">₹{u.totalWithdrawn.toLocaleString("en-IN")}</span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-sm text-yellow-500 font-medium">₹{u.escrowLocked.toLocaleString("en-IN")}</span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-sm text-muted-foreground">{u.txCount}</span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </Card>
+            </div>
+          )}
 
           {/* Projects Table — same for everyone, actions admin-only */}
           {(activeTab === "overview" || activeTab === "projects") && (
@@ -1165,6 +1366,174 @@ const AdminDashboard = () => {
             </div>
           </Card>
           )} {/* end projects table conditional */}
+
+          {/* ── Notifications Tab ── */}
+          {activeTab === "notifications" && (() => {
+            const unread = adminNotifs.filter(n => !n.read);
+            const read   = adminNotifs.filter(n => n.read);
+            const notifIcon = (type: string) => {
+              if (type === "new_project") return <FolderOpen className="h-4 w-4 text-blue-500" />;
+              if (type === "new_bid")     return <Gavel className="h-4 w-4 text-yellow-500" />;
+              return <Bell className="h-4 w-4 text-primary" />;
+            };
+            const notifColor = (type: string) => {
+              if (type === "new_project") return "border-blue-500/20 bg-blue-500/5";
+              if (type === "new_bid")     return "border-yellow-500/20 bg-yellow-500/5";
+              return "border-primary/20 bg-primary/5";
+            };
+
+            return (
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-heading text-lg font-bold text-foreground">Notifications</h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {unread.length} unread · {adminNotifs.length} total
+                    </p>
+                  </div>
+                  {unread.length > 0 && (
+                    <button
+                      onClick={markAllRead}
+                      className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <CheckCheck className="h-3.5 w-3.5" /> Mark all read
+                    </button>
+                  )}
+                </div>
+
+                {/* Summary cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <Card className="p-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 border border-destructive/20">
+                      <AlertCircle className="h-5 w-5 text-destructive" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-extrabold text-foreground leading-none">{unread.length}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Unread</p>
+                    </div>
+                  </Card>
+                  <Card className="p-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10 border border-green-500/20">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-extrabold text-foreground leading-none">{read.length}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Read</p>
+                    </div>
+                  </Card>
+                  <Card className="p-4 flex items-center gap-3 col-span-2 sm:col-span-1">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                      <Bell className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-extrabold text-foreground leading-none">{adminNotifs.length}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Total</p>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Notification list */}
+                <Card className="overflow-hidden">
+                  <div className="border-b px-4 sm:px-6 py-3.5 flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-primary" />
+                    <p className="font-semibold text-sm text-foreground">All Notifications</p>
+                    {unread.length > 0 && (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">
+                        {unread.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {loadingNotifs ? (
+                    <div className="space-y-3 p-4">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-muted animate-pulse shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 bg-muted rounded animate-pulse w-3/4" />
+                            <div className="h-2.5 bg-muted rounded animate-pulse w-1/3" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : adminNotifs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/10 border border-green-500/20">
+                        <CheckCircle2 className="h-7 w-7 text-green-500" />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-semibold text-foreground">All caught up!</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">No notifications yet</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {/* Unread first */}
+                      {unread.length > 0 && (
+                        <div className="px-4 sm:px-6 py-2 bg-muted/20">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Unread ({unread.length})</p>
+                        </div>
+                      )}
+                      {unread.map(n => (
+                        <div key={n._id}
+                          className="flex items-start gap-3 px-4 sm:px-6 py-4 bg-primary/[0.02] hover:bg-secondary/40 transition-colors">
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${notifColor(n.type)} relative`}>
+                            {notifIcon(n.type)}
+                            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-card" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground leading-snug">{n.message}</p>
+                            {n.projectTitle && (
+                              <p className="text-xs text-primary mt-0.5 font-medium truncate">{n.projectTitle}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => markNotifRead(n._id)}
+                            className="shrink-0 flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                          >
+                            <CheckCheck className="h-3 w-3" /> Read
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Read notifications */}
+                      {read.length > 0 && (
+                        <div className="px-4 sm:px-6 py-2 bg-muted/10">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Read ({read.length})</p>
+                        </div>
+                      )}
+                      {read.map(n => (
+                        <div key={n._id}
+                          className="flex items-start gap-3 px-4 sm:px-6 py-4 opacity-60 hover:opacity-80 transition-opacity">
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${notifColor(n.type)}`}>
+                            {notifIcon(n.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground leading-snug">{n.message}</p>
+                            {n.projectTitle && (
+                              <p className="text-xs text-primary mt-0.5 font-medium truncate">{n.projectTitle}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+                          <span className="shrink-0 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <CheckCircle2 className="h-3 w-3 text-green-500" /> Seen
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </div>
+            );
+          })()}
 
         </div>
       </main>

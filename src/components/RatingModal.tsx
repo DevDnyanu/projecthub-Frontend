@@ -50,7 +50,7 @@ const RatingModal = ({ isOpen, onClose, projectId, freelancerName, onRated }: Pr
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-yellow-500/10">
             <Star className="h-7 w-7 text-yellow-500 fill-yellow-500" />
           </div>
-          <h2 className="font-heading text-xl font-bold text-foreground">Rate the Freelancer</h2>
+          <h2 className="font-heading text-xl font-bold text-foreground">Rate the Expert</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             How was your experience working with <span className="font-semibold text-foreground">{freelancerName}</span>?
           </p>

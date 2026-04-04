@@ -177,7 +177,7 @@ const AddAlertForm = ({
 
 /* ─── Main Panel ─────────────────────────────────────────── */
 interface Props {
-  onNewCount: (n: number) => void; // bubble badge count up to Navbar
+  onNewCount: (n: number) => void;
   onClose: () => void;
 }
 
@@ -233,17 +233,6 @@ const ProjectAlertsPanel = ({ onNewCount, onClose }: Props) => {
   }, [fetchRecent, fetchSaved, onNewCount]);
 
   /* ── Delete saved alert ── */
-  const handleDelete = async (id: string) => {
-    try {
-      await api.patch(`/alerts/${id}`, undefined); // will use DELETE below
-      setSavedAlerts((p) => p.filter((a) => a._id !== id));
-      toast({ title: "Alert removed" });
-    } catch {
-      toast({ title: "Failed to remove alert", variant: "destructive" });
-    }
-  };
-
-  // Since api helper only has patch/post/get, add delete via fetch directly
   const deleteAlert = async (id: string) => {
     try {
       const token = localStorage.getItem("ph_token");

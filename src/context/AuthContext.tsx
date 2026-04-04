@@ -138,6 +138,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     clearToken();
     localStorage.removeItem("adminAuth");
     localStorage.removeItem("userAuth");
+    import("@/lib/socket").then(({ disconnectSocket }) => disconnectSocket());
   }, []);
 
   const updateAvatar = useCallback((url: string) => {

@@ -8,7 +8,7 @@ const posts = [
     excerpt: "Learn the 5 key elements that make a bid stand out and increase your chances of being hired.",
     date: "Feb 15, 2025",
     readTime: "5 min read",
-    tag: "Freelancer Tips",
+    tag: "Expert Tips",
     tagColor: "bg-blue-500/10 text-blue-500",
   },
   {
@@ -35,7 +35,7 @@ const posts = [
     excerpt: "Your ProjectHub profile is your first impression. Make it count with these proven strategies.",
     date: "Jan 28, 2025",
     readTime: "6 min read",
-    tag: "Freelancer Tips",
+    tag: "Expert Tips",
     tagColor: "bg-blue-500/10 text-blue-500",
   },
   {
@@ -44,16 +44,16 @@ const posts = [
     excerpt: "Stop undercharging. Use this framework to set rates that reflect your skills and market demand.",
     date: "Jan 20, 2025",
     readTime: "8 min read",
-    tag: "Freelancer Tips",
+    tag: "Expert Tips",
     tagColor: "bg-blue-500/10 text-blue-500",
   },
   {
     slug: "client-onboarding",
-    title: "The Client Onboarding Checklist Every Freelancer Needs",
+    title: "The Client Onboarding Checklist Every Expert Needs",
     excerpt: "Avoid scope creep and misunderstandings with this step-by-step client onboarding process.",
     date: "Jan 12, 2025",
     readTime: "5 min read",
-    tag: "Freelancer Tips",
+    tag: "Expert Tips",
     tagColor: "bg-blue-500/10 text-blue-500",
   },
 ];
@@ -66,7 +66,7 @@ const Blog = () => (
       </span>
       <h1 className="font-heading text-4xl font-bold text-foreground">Resources & Insights</h1>
       <p className="text-muted-foreground max-w-md mx-auto">
-        Tips for freelancers, guides for clients, and industry trends — all in one place.
+        Tips for experts, guides for clients, and industry trends — all in one place.
       </p>
     </div>
 

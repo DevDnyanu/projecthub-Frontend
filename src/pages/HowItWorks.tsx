@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const clientSteps = [
   { icon: FileText,     title: "Post Your Project",    desc: "Describe what you need, set your budget, and submit. Projects go live after a quick admin review (usually 2–4 hours)." },
-  { icon: Gavel,        title: "Review Bids",          desc: "Freelancers submit detailed proposals. Each bid is admin-vetted before you see it, so you only review quality applicants." },
+  { icon: Gavel,        title: "Review Bids",          desc: "Experts submit detailed proposals. Each bid is admin-vetted before you see it, so you only review quality applicants." },
   { icon: CheckCircle,  title: "Hire & Collaborate",   desc: "Accept the best bid, work with your freelancer, and mark the project complete when delivered to your satisfaction." },
   { icon: Star,         title: "Rate & Review",        desc: "Leave a rating for your freelancer. Honest reviews help build a trusted community for everyone." },
 ];
@@ -48,7 +48,7 @@ const HowItWorks = () => {
         </span>
         <h1 className="font-heading text-4xl font-bold text-foreground">Simple. Transparent. Effective.</h1>
         <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
-          ProjectHub removes the friction from freelancing. Here's how we make it work for both clients and freelancers.
+          ProjectHub removes the friction from freelancing. Here's how we make it work for both clients and experts.
         </p>
       </div>
 
@@ -72,7 +72,7 @@ const HowItWorks = () => {
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-6">
             <div className="h-2 w-2 rounded-full bg-green-500" />
-            <h2 className="font-heading text-xl font-bold text-foreground">For Freelancers</h2>
+            <h2 className="font-heading text-xl font-bold text-foreground">For Experts</h2>
           </div>
           {freelancerSteps.map((s, i) => (
             <StepCard key={s.title} step={i + 1} {...s} />

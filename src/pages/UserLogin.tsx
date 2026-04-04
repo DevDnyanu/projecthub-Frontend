@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
   Eye, EyeOff, Mail, Lock, User, ArrowRight,
-  CheckCircle2, Star, TrendingUp, Shield, ArrowLeft,
+  CheckCircle2, Star, Shield, ArrowLeft,
   Briefcase, LogIn, UserPlus, KeyRound, XCircle,
+  Zap, ShieldCheck,
 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
@@ -15,10 +16,10 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 
 const PERKS = [
-  { icon: TrendingUp, text: "10,000+ live projects daily" },
-  { icon: Star, text: "Top-rated verified freelancers" },
-  { icon: Shield, text: "100% payment protection" },
-  { icon: CheckCircle2, text: "Free to join & browse" },
+  { icon: Zap,          text: "Post projects and get proposals fast" },
+  { icon: Star,         text: "Top-rated verified experts" },
+  { icon: ShieldCheck,  text: "100% payment protection via Escrow" },
+  { icon: CheckCircle2, text: "Free to join and browse" },
 ];
 
 interface DemoCard {
@@ -55,26 +56,23 @@ const UserLogin = () => {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resending, setResending] = useState(false);
 
-  // 2FA step-2 state
   const [tfaTempToken, setTfaTempToken] = useState("");
   const [tfaCode, setTfaCode] = useState("");
   const [tfaError, setTfaError] = useState("");
   const [tfaLoading, setTfaLoading] = useState(false);
 
-  // Forgot password — OTP flow
-  const [forgotEmail, setForgotEmail]         = useState("");
-  const [forgotStep, setForgotStep]           = useState<"email" | "otp">("email");
-  const [forgotOtp, setForgotOtp]             = useState("");
+  const [forgotEmail, setForgotEmail]             = useState("");
+  const [forgotStep, setForgotStep]               = useState<"email" | "otp">("email");
+  const [forgotOtp, setForgotOtp]                 = useState("");
   const [forgotOtpVerified, setForgotOtpVerified] = useState(false);
-  const [forgotNewPass, setForgotNewPass]     = useState("");
-  const [forgotConfPass, setForgotConfPass]   = useState("");
-  const [forgotResetDone, setForgotResetDone] = useState(false);
-  const [forgotLoading, setForgotLoading]     = useState(false);
-  const [forgotError, setForgotError]         = useState("");
+  const [forgotNewPass, setForgotNewPass]         = useState("");
+  const [forgotConfPass, setForgotConfPass]       = useState("");
+  const [forgotResetDone, setForgotResetDone]     = useState(false);
+  const [forgotLoading, setForgotLoading]         = useState(false);
+  const [forgotError, setForgotError]             = useState("");
 
   useEffect(() => {
     if (isLoggedIn) {
-      // Admin users go directly to the dashboard
       navigate(user?.is_admin ? "/admin" : "/", { replace: true });
     }
   }, [isLoggedIn, user, navigate]);
@@ -95,7 +93,6 @@ const UserLogin = () => {
         toast({ title: "Sign in failed", description: "Incorrect email or password.", variant: "destructive" });
         return;
       }
-      // 2FA required — move to step-2 form
       if (result.requires2FA) {
         setTfaTempToken(result.tempToken);
         setTfaCode("");
@@ -103,7 +100,6 @@ const UserLogin = () => {
         setMode("2fa");
         return;
       }
-      // Normal login complete
       if (result.needsVerification) {
         setNeedsVerification(true);
         toast({ title: "Signed in", description: "Please verify your email to post projects." });
@@ -124,10 +120,7 @@ const UserLogin = () => {
     setTfaError("");
     try {
       const result = await complete2faLogin(tfaTempToken, tfaCode);
-      if (!result.success) {
-        setTfaError("Invalid code. Please try again.");
-        return;
-      }
+      if (!result.success) { setTfaError("Invalid code. Please try again."); return; }
       toast({ title: "Welcome back!", description: "You're now signed in to ProjectHub." });
     } catch {
       setTfaError("Something went wrong. Please try again.");
@@ -163,7 +156,7 @@ const UserLogin = () => {
     try {
       await api.post("/auth/forgot-password", { email: forgotEmail });
     } catch {
-      // Always proceed to OTP step — don't reveal if email exists
+      // Always proceed — don't reveal if email exists
     } finally {
       setForgotLoading(false);
       setForgotStep("otp");
@@ -211,7 +204,7 @@ const UserLogin = () => {
     setLoading(true);
     const ok = await signup(name, email, password);
     if (ok) {
-      toast({ title: "Account created!", description: "Please sign in with your credentials." });
+      toast({ title: "Account created!", description: "Please Sign In with your credentials." });
       setMode("login");
       setName("");
       setPassword("");
@@ -221,342 +214,260 @@ const UserLogin = () => {
     setLoading(false);
   };
 
+  const resetForgot = () => {
+    setMode("login");
+    setForgotStep("email");
+    setForgotResetDone(false);
+    setForgotOtp("");
+    setForgotOtpVerified(false);
+    setForgotNewPass("");
+    setForgotConfPass("");
+    setForgotError("");
+  };
+
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+
       {/* ── Left panel – branding ── */}
-      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 text-primary-foreground relative overflow-hidden">
-        {/* HD bird photo */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1200&q=80')" }}
+      <div className="hidden lg:flex lg:w-[42%] flex-col justify-between p-8 relative overflow-hidden">
+
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 30%, hsl(var(--primary)) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, #7c3aed 0%, transparent 45%),
+            radial-gradient(circle at 60% 10%, #0ea5e9 0%, transparent 40%)
+          `,
+          opacity: 0.22,
+        }} />
+        <div className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1px)",
+            backgroundSize: "26px 26px",
+          }}
         />
-        {/* Gradient overlay — dark at top/bottom for text, transparent in middle so bird shows fully */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(30,64,175,0.82) 0%, rgba(30,64,175,0.25) 35%, rgba(30,64,175,0.25) 65%, rgba(10,30,80,0.88) 100%)" }} />
-        {/* All content sits above the image */}
+
         <div className="relative z-10 flex flex-col justify-between h-full">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur">
-            <Briefcase className="h-5 w-5" />
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/15 backdrop-blur">
+              <Briefcase className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-white">ProjectHub</span>
+          </Link>
+
+          <div>
+            <h2 className="text-3xl font-extrabold leading-tight text-white">
+              Connect with<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-violet-400">
+                Global Experts.
+              </span>
+              <br />Build anything.
+            </h2>
+            <p className="mt-3 text-white/55 text-sm leading-relaxed max-w-xs">
+              Work with trusted professionals across every domain — with full payment protection.
+            </p>
+            <ul className="mt-6 space-y-3">
+              {PERKS.map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 border border-white/10">
+                    <Icon className="h-3.5 w-3.5 text-white/80" />
+                  </div>
+                  <span className="text-sm text-white/70">{text}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <span className="text-xl font-bold tracking-tight">ProjectHub</span>
-        </Link>
 
-        <div>
-          <h2 className="text-4xl font-bold leading-tight">
-            India's #1<br />Freelance<br />Marketplace
-          </h2>
-          <p className="mt-4 text-primary-foreground/70 text-lg">
-            Connect with top talent or find your next big project.
-          </p>
-          <ul className="mt-10 space-y-4">
-            {PERKS.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span className="text-sm text-primary-foreground/90">{text}</span>
-              </li>
-            ))}
-          </ul>
+          <p className="text-xs text-white/25">© {new Date().getFullYear()} ProjectHub. All rights reserved.</p>
         </div>
-
-        <p className="text-xs text-primary-foreground/40">© 2025 ProjectHub. All rights reserved.</p>
-        </div>{/* end z-10 */}
       </div>
 
       {/* ── Right panel – form ── */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 bg-background">
+      <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 bg-background overflow-y-auto">
         <div className="w-full max-w-md">
 
           {/* Mobile logo */}
-          <Link to="/" className="mb-8 flex items-center gap-2 lg:hidden">
+          <Link to="/" className="mb-6 flex items-center gap-2 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Briefcase className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="text-lg font-bold text-foreground">ProjectHub</span>
           </Link>
 
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-1.5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                {mode === "login"  && <LogIn     className="h-5 w-5 text-primary" />}
-                {mode === "signup" && <UserPlus  className="h-5 w-5 text-primary" />}
-                {mode === "forgot" && <KeyRound  className="h-5 w-5 text-primary" />}
-                {mode === "2fa"    && <Shield    className="h-5 w-5 text-primary" />}
+                {mode === "login"  && <LogIn    className="h-5 w-5 text-primary" />}
+                {mode === "signup" && <UserPlus className="h-5 w-5 text-primary" />}
+                {mode === "forgot" && <KeyRound className="h-5 w-5 text-primary" />}
+                {mode === "2fa"    && <Shield   className="h-5 w-5 text-primary" />}
               </div>
               <h1 className="text-2xl font-bold text-foreground">
-                {mode === "login"   ? "Sign in to your account"
-                : mode === "signup"  ? "Create your account"
-                : mode === "2fa"     ? "Two-factor verification"
-                : "Reset your password"}
+                {mode === "login"  ? "Sign In"
+                : mode === "signup" ? "Create Account"
+                : mode === "2fa"    ? "Two-Factor Verification"
+                : "Reset Password"}
               </h1>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {mode === "forgot" ? (
-                <button
-                  type="button"
-                  onClick={() => { setMode("login"); setForgotStep("email"); setForgotResetDone(false); setForgotOtp(""); setForgotOtpVerified(false); setForgotNewPass(""); setForgotConfPass(""); setForgotError(""); }}
-                  className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                >
-                  <ArrowLeft className="h-3 w-3" /> Back to sign in
+                <button type="button" onClick={resetForgot}
+                  className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
+                  <ArrowLeft className="h-3 w-3" /> Back to Sign In
                 </button>
               ) : (
                 <>
                   {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-                  <button
-                    type="button"
+                  <button type="button"
                     onClick={() => { setMode(mode === "login" ? "signup" : "login"); setEmail(""); setPassword(""); setName(""); }}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {mode === "login" ? "Create an account" : "Sign in"}
+                    className="font-medium text-primary hover:underline">
+                    {mode === "login" ? "Create one" : "Sign In"}
                   </button>
                 </>
               )}
             </p>
           </div>
 
+          {/* Email not verified banner */}
           {needsVerification && (
-            <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
-              <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                Your email address is not verified yet.
+            <div className="mb-3 rounded-xl border border-amber-500/25 bg-amber-500/8 p-3">
+              <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                Your email is not verified.{" "}
+                <button type="button" onClick={handleResendVerification} disabled={resending}
+                  className="font-semibold underline hover:no-underline disabled:opacity-50">
+                  {resending ? "Sending…" : "Resend email"}
+                </button>
               </p>
-              <button
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resending}
-                className="mt-2 text-xs font-semibold text-yellow-600 underline hover:no-underline disabled:opacity-50"
-              >
-                {resending ? "Sending…" : "Resend verification email"}
-              </button>
             </div>
           )}
 
-          {/* ── 2FA step-2 ── */}
+          {/* ── 2FA ── */}
           {mode === "2fa" && (
-            <form onSubmit={handle2faSubmit} className="space-y-5">
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-                Open your authenticator app and enter the{" "}
-                <span className="font-semibold text-foreground">6-digit code</span> shown for this account.
-                You can also use a backup code (format: <span className="font-mono text-xs">XXXX-XXXX-XXXX</span>).
+            <form onSubmit={handle2faSubmit} className="space-y-3">
+              <div className="rounded-xl border border-primary/15 bg-primary/5 p-3 text-xs text-muted-foreground">
+                Open your authenticator app and enter the <span className="font-semibold text-foreground">6-digit code</span>.
+                Or use a backup code <span className="font-mono">(XXXX-XXXX-XXXX)</span>.
               </div>
-
               {tfaError && (
-                <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-                  <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                  <p className="text-sm text-destructive">{tfaError}</p>
+                <div className="flex items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/8 p-2.5">
+                  <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                  <p className="text-xs text-destructive">{tfaError}</p>
                 </div>
               )}
-
               <div className="space-y-1.5">
-                <Label>Authenticator code</Label>
+                <Label className="text-xs">Authenticator code</Label>
                 <div className="flex justify-center">
-                  <InputOTP
-                    maxLength={6}
-                    value={tfaCode}
-                    onChange={(val) => { setTfaCode(val); setTfaError(""); }}
-                  >
+                  <InputOTP maxLength={6} value={tfaCode} onChange={(val) => { setTfaCode(val); setTfaError(""); }}>
                     <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
+                      {[0,1,2,3,4,5].map((i) => <InputOTPSlot key={i} index={i} />)}
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
               </div>
-
-              <Button type="submit" size="lg" className="w-full gap-2" disabled={tfaLoading || tfaCode.length !== 6}>
-                {tfaLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Verifying…
-                  </span>
-                ) : (
-                  <>Verify &amp; Sign In <ArrowRight className="h-4 w-4" /></>
-                )}
+              <Button type="submit" className="w-full gap-2 h-9" disabled={tfaLoading || tfaCode.length !== 6}>
+                {tfaLoading ? <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> Verifying…</> : <>Verify &amp; Sign In <ArrowRight className="h-4 w-4" /></>}
               </Button>
-
-              <p className="text-center text-xs text-muted-foreground">
+              <p className="text-center text-xs">
                 <button type="button" onClick={() => { setMode("login"); setTfaTempToken(""); setTfaCode(""); setTfaError(""); }}
                   className="text-primary hover:underline inline-flex items-center gap-1">
-                  <ArrowLeft className="h-3 w-3" /> Back to sign in
+                  <ArrowLeft className="h-3 w-3" /> Back to Sign In
                 </button>
               </p>
             </form>
           )}
 
-          {/* ── Forgot password — OTP flow ── */}
+          {/* ── Forgot password ── */}
           {mode === "forgot" && (
             <div>
-              {/* Success */}
               {forgotResetDone ? (
-                <div className="rounded-xl border border-success/30 bg-success/10 p-6 text-center space-y-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success/20 mx-auto">
-                    <CheckCircle2 className="h-6 w-6 text-success" />
+                <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-5 text-center space-y-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 mx-auto">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                   </div>
-                  <p className="font-semibold text-foreground">Password Reset Successfully!</p>
-                  <p className="text-sm text-muted-foreground">
-                    Your password has been updated. You can now sign in with your new password.
-                  </p>
-                  <Button
-                    type="button"
-                    className="mt-2 gap-2"
-                    onClick={() => { setMode("login"); setForgotStep("email"); setForgotResetDone(false); setForgotOtp(""); setForgotOtpVerified(false); setForgotNewPass(""); setForgotConfPass(""); setForgotError(""); }}
-                  >
+                  <p className="font-semibold text-foreground text-sm">Password Reset Successfully!</p>
+                  <p className="text-xs text-muted-foreground">You can now Sign In with your new password.</p>
+                  <Button type="button" className="gap-2 h-9 text-sm" onClick={resetForgot}>
                     Sign In Now <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
 
               ) : forgotStep === "otp" ? (
-                <div className="space-y-4">
-                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-primary/15 bg-primary/5 p-3 text-xs text-muted-foreground">
                     We sent a <span className="font-semibold text-foreground">6-digit OTP</span> to{" "}
-                    <span className="font-semibold text-foreground">{forgotEmail}</span>.
-                    Check your inbox (and spam folder).
+                    <span className="font-semibold text-foreground">{forgotEmail}</span>. Check your inbox.
                   </div>
-
                   {forgotError && (
-                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-                      <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                      <p className="text-sm text-destructive">{forgotError}</p>
+                    <div className="flex items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/8 p-2.5">
+                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                      <p className="text-xs text-destructive">{forgotError}</p>
                     </div>
                   )}
-
-                  {/* Sub-step A — Verify OTP */}
                   {!forgotOtpVerified ? (
-                    <form onSubmit={handleVerifyOtp} className="space-y-4">
+                    <form onSubmit={handleVerifyOtp} className="space-y-3">
                       <div className="space-y-1.5">
-                        <Label>Enter OTP</Label>
+                        <Label className="text-xs">Enter OTP</Label>
                         <div className="flex justify-center">
                           <InputOTP maxLength={6} value={forgotOtp} onChange={(val) => { setForgotOtp(val); setForgotError(""); }}>
                             <InputOTPGroup>
-                              <InputOTPSlot index={0} />
-                              <InputOTPSlot index={1} />
-                              <InputOTPSlot index={2} />
-                              <InputOTPSlot index={3} />
-                              <InputOTPSlot index={4} />
-                              <InputOTPSlot index={5} />
+                              {[0,1,2,3,4,5].map((i) => <InputOTPSlot key={i} index={i} />)}
                             </InputOTPGroup>
                           </InputOTP>
                         </div>
                       </div>
-
-                      <Button type="submit" size="lg" className="w-full gap-2" disabled={forgotLoading || forgotOtp.length !== 6}>
-                        {forgotLoading ? (
-                          <span className="flex items-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            Verifying...
-                          </span>
-                        ) : (
-                          <>Verify OTP <ArrowRight className="h-4 w-4" /></>
-                        )}
+                      <Button type="submit" className="w-full gap-2 h-9" disabled={forgotLoading || forgotOtp.length !== 6}>
+                        {forgotLoading ? <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> Verifying...</> : <>Verify OTP <ArrowRight className="h-4 w-4" /></>}
                       </Button>
-
                       <p className="text-center text-xs text-muted-foreground">
                         Didn't receive it?{" "}
-                        <button
-                          type="button"
-                          onClick={() => { setForgotStep("email"); setForgotOtp(""); setForgotError(""); }}
-                          className="text-primary hover:underline"
-                        >
-                          Send OTP again
-                        </button>
+                        <button type="button" onClick={() => { setForgotStep("email"); setForgotOtp(""); setForgotError(""); }} className="text-primary hover:underline">Send again</button>
                       </p>
                     </form>
-
                   ) : (
-                    /* Sub-step B — OTP verified, set new password */
-                    <form onSubmit={handleOtpReset} className="space-y-4">
-                      <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2">
-                        <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-                        <p className="text-sm font-medium text-success">OTP verified! Now set your new password.</p>
+                    <form onSubmit={handleOtpReset} className="space-y-3">
+                      <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-3 py-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">OTP verified! Set your new password.</p>
                       </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="otp-new-pass">New Password</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="otp-new-pass" className="text-xs">New Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="otp-new-pass"
-                            type="password"
-                            placeholder="Min. 6 characters"
-                            value={forgotNewPass}
-                            onChange={(e) => setForgotNewPass(e.target.value)}
-                            className="pl-10"
-                            required
-                            autoFocus
-                          />
+                          <Input id="otp-new-pass" type="password" placeholder="Min. 6 characters" value={forgotNewPass} onChange={(e) => setForgotNewPass(e.target.value)} className="pl-10 h-9" required autoFocus />
                         </div>
                       </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="otp-conf-pass">Confirm Password</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="otp-conf-pass" className="text-xs">Confirm Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="otp-conf-pass"
-                            type="password"
-                            placeholder="Repeat your password"
-                            value={forgotConfPass}
-                            onChange={(e) => setForgotConfPass(e.target.value)}
-                            className="pl-10"
-                            required
-                          />
+                          <Input id="otp-conf-pass" type="password" placeholder="Repeat your password" value={forgotConfPass} onChange={(e) => setForgotConfPass(e.target.value)} className="pl-10 h-9" required />
                         </div>
                         {forgotConfPass.length > 0 && (
-                          <p className={`text-xs font-medium ${forgotNewPass === forgotConfPass ? "text-success" : "text-destructive"}`}>
+                          <p className={`text-xs font-medium ${forgotNewPass === forgotConfPass ? "text-emerald-500" : "text-destructive"}`}>
                             {forgotNewPass === forgotConfPass ? "✓ Passwords match" : "✗ Passwords do not match"}
                           </p>
                         )}
                       </div>
-
-                      <Button type="submit" size="lg" className="w-full gap-2" disabled={forgotLoading}>
-                        {forgotLoading ? (
-                          <span className="flex items-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            Resetting...
-                          </span>
-                        ) : (
-                          <>Reset Password <ArrowRight className="h-4 w-4" /></>
-                        )}
+                      <Button type="submit" className="w-full gap-2 h-9" disabled={forgotLoading}>
+                        {forgotLoading ? <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> Resetting...</> : <>Reset Password <ArrowRight className="h-4 w-4" /></>}
                       </Button>
                     </form>
                   )}
                 </div>
 
               ) : (
-                /* Step 1 — Enter email */
-                <form onSubmit={handleForgotPassword} className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Enter your registered email and we'll send you a 6-digit OTP to reset your password.
-                  </p>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="forgot-email">Email Address</Label>
+                <form onSubmit={handleForgotPassword} className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Enter your registered email and we'll send you a 6-digit OTP.</p>
+                  <div className="space-y-1">
+                    <Label htmlFor="forgot-email" className="text-xs">Email Address</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="forgot-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                        autoFocus
-                      />
+                      <Input id="forgot-email" type="email" placeholder="you@example.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="pl-10 h-9" required autoFocus />
                     </div>
                   </div>
-                  <Button type="submit" size="lg" className="w-full gap-2" disabled={forgotLoading}>
-                    {forgotLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Sending OTP...
-                      </span>
-                    ) : (
-                      <>Send OTP <ArrowRight className="h-4 w-4" /></>
-                    )}
+                  <Button type="submit" className="w-full gap-2 h-9" disabled={forgotLoading}>
+                    {forgotLoading ? <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> Sending OTP...</> : <>Send OTP <ArrowRight className="h-4 w-4" /></>}
                   </Button>
                 </form>
               )}
@@ -565,136 +476,86 @@ const UserLogin = () => {
 
           {/* ── Login / Signup form ── */}
           {mode !== "forgot" && mode !== "2fa" && (
-          <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-4">
-            {mode === "signup" && (
+            <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-4">
+              {mode === "signup" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="name" type="text" placeholder="Rahul Sharma" value={name} onChange={(e) => setName(e.target.value)} className="pl-10 h-11" required autoFocus />
+                  </div>
+                </div>
+              )}
               <div className="space-y-1.5">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Rahul Sharma"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="pl-10"
-                    required
-                    autoFocus
-                  />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-11" required autoFocus={mode === "login"} />
                 </div>
               </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                  autoFocus={mode === "login"}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                {mode === "login" && (
-                  <button
-                    type="button"
-                    onClick={() => { setMode("forgot"); setForgotEmail(email); setForgotStep("email"); }}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Forgot password?
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  {mode === "login" && (
+                    <button type="button" onClick={() => { setMode("forgot"); setForgotEmail(email); setForgotStep("email"); }}
+                      className="text-xs text-primary hover:underline">Forgot password?</button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input id="password" type={showPassword ? "text" : "password"}
+                    placeholder={mode === "signup" ? "Min. 6 characters" : "••••••••"}
+                    value={password} onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 h-11" required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
-                )}
+                </div>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder={mode === "signup" ? "Min. 6 characters" : "••••••••"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            {mode === "signup" && (
-              <p className="text-xs text-muted-foreground">
-                By creating an account, you agree to our{" "}
-                <span className="text-primary cursor-pointer hover:underline">Terms of Service</span>{" "}
-                and{" "}
-                <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>.
-              </p>
-            )}
-
-            <Button type="submit" size="lg" className="w-full gap-2 mt-2" disabled={loading}>
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  {mode === "login" ? "Signing in..." : "Creating account..."}
-                </span>
-              ) : (
-                <>{mode === "login" ? "Sign In" : "Create Account"} <ArrowRight className="h-4 w-4" /></>
+              {mode === "signup" && (
+                <p className="text-xs text-muted-foreground">
+                  By creating an account, you agree to our{" "}
+                  <Link to="/terms" className="text-primary hover:underline">Terms</Link>{" "}and{" "}
+                  <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+                </p>
               )}
-            </Button>
-          </form>
-
-          )} {/* end login/signup form conditional */}
+              <Button type="submit" size="lg" className="w-full gap-2 h-11 mt-1" disabled={loading}>
+                {loading
+                  ? <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> {mode === "login" ? "Signing in..." : "Creating account..."}</>
+                  : <>{mode === "login" ? "Sign In" : "Create Account"} <ArrowRight className="h-4 w-4" /></>
+                }
+              </Button>
+            </form>
+          )}
 
           {/* Demo credentials */}
           {mode !== "forgot" && mode !== "2fa" && (
-          <div className="mt-6">
-            <div className="relative">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground whitespace-nowrap">
-                Demo Accounts
-              </span>
-            </div>
-            <div className="mt-5 grid grid-cols-1 gap-2">
-              {DEMO_CARDS.map((card) => (
-                <button
-                  key={card.email}
-                  type="button"
-                  onClick={() => fillDemo(card)}
-                  className="rounded-lg border bg-card p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${card.color}`}>
+            <div className="mt-5">
+              <div className="relative">
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground whitespace-nowrap">
+                  Demo Accounts
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-2">
+                {DEMO_CARDS.map((card) => (
+                  <button key={card.email} type="button" onClick={() => fillDemo(card)}
+                    className="rounded-xl border border-border bg-card px-4 py-3 text-left transition-all hover:border-primary/40 hover:bg-primary/5 flex items-center gap-3">
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${card.color}`}>
                       {card.initial}
                     </div>
-                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${card.color}`}>
-                      {card.tag}
-                    </span>
-                  </div>
-                  <p className="text-[11px] font-semibold text-foreground leading-tight">{card.label}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{card.email}</p>
-                </button>
-              ))}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{card.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">{card.email}</p>
+                    </div>
+                    <span className={`ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide shrink-0 ${card.color}`}>{card.tag}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-center text-xs text-muted-foreground">Click to auto-fill credentials</p>
             </div>
-            <p className="mt-2 text-center text-[11px] text-muted-foreground">
-              Click any card to auto-fill credentials
-            </p>
-          </div>
-          )} {/* end demo credentials conditional */}
+          )}
 
         </div>
       </div>

@@ -175,7 +175,7 @@ const PaymentModal = ({
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Freelancer</span>
+              <span className="text-muted-foreground">Expert</span>
               <span className="font-medium text-foreground">{freelancerName}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-border">

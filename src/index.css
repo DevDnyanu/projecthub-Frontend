@@ -15,14 +15,14 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 10%;
 
-    --primary: 220 80% 50%;
+    --primary: 204 90% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 204 14% 96%;
+    --secondary-foreground: 210 20% 10%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 204 14% 96%;
+    --muted-foreground: 210 10% 46%;
 
     --accent: 350 80% 56%;
     --accent-foreground: 0 0% 100%;
@@ -30,9 +30,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 86%;
-    --input: 220 13% 86%;
-    --ring: 220 80% 50%;
+    --border: 204 13% 86%;
+    --input: 204 13% 86%;
+    --ring: 204 90% 48%;
 
     --radius: 0.625rem;
 
@@ -42,14 +42,14 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --sidebar-background: 220 14% 97%;
-    --sidebar-foreground: 220 20% 15%;
-    --sidebar-primary: 220 80% 50%;
+    --sidebar-background: 204 14% 97%;
+    --sidebar-foreground: 210 20% 15%;
+    --sidebar-primary: 204 90% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 92%;
-    --sidebar-accent-foreground: 220 20% 15%;
-    --sidebar-border: 220 13% 86%;
-    --sidebar-ring: 220 80% 50%;
+    --sidebar-accent: 204 14% 92%;
+    --sidebar-accent-foreground: 210 20% 15%;
+    --sidebar-border: 204 13% 86%;
+    --sidebar-ring: 204 90% 48%;
 
     --font-heading: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Inter', sans-serif;
@@ -62,27 +62,27 @@
     --card-foreground: 220 14% 95%;
     --popover: 224 22% 9%;
     --popover-foreground: 220 14% 95%;
-    --primary: 220 85% 58%;
+    --primary: 204 90% 56%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 224 22% 14%;
-    --secondary-foreground: 220 14% 95%;
-    --muted: 224 22% 14%;
-    --muted-foreground: 220 10% 58%;
+    --secondary: 210 22% 14%;
+    --secondary-foreground: 210 14% 95%;
+    --muted: 210 22% 14%;
+    --muted-foreground: 210 10% 58%;
     --accent: 350 80% 58%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 224 22% 20%;
-    --input: 224 22% 20%;
-    --ring: 220 85% 58%;
-    --sidebar-background: 224 25% 5%;
-    --sidebar-foreground: 220 14% 80%;
-    --sidebar-primary: 220 85% 58%;
+    --border: 210 22% 20%;
+    --input: 210 22% 20%;
+    --ring: 204 90% 56%;
+    --sidebar-background: 210 25% 5%;
+    --sidebar-foreground: 210 14% 80%;
+    --sidebar-primary: 204 90% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 25% 12%;
-    --sidebar-accent-foreground: 220 14% 90%;
-    --sidebar-border: 224 25% 14%;
-    --sidebar-ring: 220 85% 58%;
+    --sidebar-accent: 210 25% 12%;
+    --sidebar-accent-foreground: 210 14% 90%;
+    --sidebar-border: 210 25% 14%;
+    --sidebar-ring: 204 90% 56%;
   }
 }
 
@@ -128,10 +128,10 @@
   inset: -1.5px;
   border-radius: inherit;
   background: linear-gradient(135deg,
-    hsl(220,80%,55%),
-    hsl(260,80%,65%),
-    hsl(190,80%,55%),
-    hsl(220,80%,55%)
+    hsl(204,90%,50%),
+    hsl(210,80%,65%),
+    hsl(195,80%,55%),
+    hsl(204,90%,50%)
   );
   background-size: 300% 300%;
   opacity: 0;
@@ -162,8 +162,8 @@
 
 /* 4. NEW badge pulse ring */
 @keyframes badgePulse {
-  0%,100% { box-shadow: 0 0 0 0    hsl(220 80% 50% / 0.5); }
-  50%      { box-shadow: 0 0 0 5px hsl(220 80% 50% / 0);   }
+  0%,100% { box-shadow: 0 0 0 0    hsl(204 90% 48% / 0.5); }
+  50%      { box-shadow: 0 0 0 5px hsl(204 90% 48% / 0);   }
 }
 .badge-new {
   animation: badgePulse 2s ease-in-out infinite;
@@ -171,8 +171,8 @@
 
 /* 5. CTA button pulse glow */
 @keyframes ctaPulse {
-  0%,100% { box-shadow: 0 0 0 0    hsl(220 80% 50% / 0.55); }
-  50%     { box-shadow: 0 0 0 10px hsl(220 80% 50% / 0);    }
+  0%,100% { box-shadow: 0 0 0 0    hsl(204 90% 48% / 0.55); }
+  50%     { box-shadow: 0 0 0 10px hsl(204 90% 48% / 0);    }
 }
 .cta-pulse { animation: ctaPulse 2.5s ease-in-out infinite; }
 
@@ -253,7 +253,7 @@
   /* Multi-stop gradient text */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(220 80% 58%), hsl(260 80% 68%), hsl(220 80% 50%));
+    background-image: linear-gradient(135deg, hsl(204 90% 54%), hsl(204 80% 68%), hsl(204 90% 48%));
   }
 
   /* Glassmorphism panel */
@@ -271,7 +271,7 @@
   .card-hover:hover {
     transform: translateY(-3px);
     box-shadow:
-      0 8px 24px -8px hsl(220 80% 50% / 0.18),
+      0 8px 24px -8px hsl(204 90% 48% / 0.18),
       0 2px 8px -2px hsl(220 20% 5% / 0.25);
   }
 
@@ -285,7 +285,7 @@
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, hsl(220 80% 55% / 0.7), hsl(260 80% 65% / 0.4), hsl(190 80% 55% / 0.4));
+    background: linear-gradient(135deg, hsl(204 90% 50% / 0.7), hsl(204 80% 65% / 0.4), hsl(195 80% 55% / 0.4));
     z-index: -1;
     opacity: 0;
     transition: opacity 0.25s ease;
@@ -294,6 +294,91 @@
 
   /* Glow ring on focus-like hover for CTA buttons */
   .btn-glow:hover {
-    box-shadow: 0 0 0 4px hsl(220 80% 50% / 0.2), 0 4px 16px -4px hsl(220 80% 50% / 0.4);
+    box-shadow: 0 0 0 4px hsl(204 90% 48% / 0.2), 0 4px 16px -4px hsl(204 90% 48% / 0.4);
+  }
+
+  /* Aurora hero gradient text */
+  .text-aurora {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #38bdf8 0%, #818cf8 40%, #34d399 70%, #38bdf8 100%);
+    background-size: 200% auto;
+    animation: auroraText 5s linear infinite;
   }
 }
+
+/* ── Floating card animations ────────────────────────── */
+@keyframes floatA {
+  0%,100% { transform: translateY(0px)   translateX(0px)   rotate(0deg);   }
+  25%      { transform: translateY(-18px) translateX(8px)   rotate(1.5deg); }
+  50%      { transform: translateY(-10px) translateX(-6px)  rotate(-1deg);  }
+  75%      { transform: translateY(-22px) translateX(4px)   rotate(2deg);   }
+}
+@keyframes floatB {
+  0%,100% { transform: translateY(0px)   translateX(0px)   rotate(0deg);    }
+  30%      { transform: translateY(-14px) translateX(-10px) rotate(-2deg);   }
+  60%      { transform: translateY(-24px) translateX(6px)   rotate(1.5deg);  }
+  80%      { transform: translateY(-8px)  translateX(-4px)  rotate(-0.5deg); }
+}
+@keyframes floatC {
+  0%,100% { transform: translateY(0px)   translateX(0px)  rotate(0deg);   }
+  40%      { transform: translateY(-20px) translateX(10px) rotate(2.5deg); }
+  70%      { transform: translateY(-12px) translateX(-8px) rotate(-1.5deg);}
+}
+@keyframes floatD {
+  0%,100% { transform: translateY(0px)   translateX(0px)   rotate(0deg);   }
+  35%      { transform: translateY(-16px) translateX(-12px) rotate(-2deg);  }
+  65%      { transform: translateY(-26px) translateX(8px)   rotate(1deg);   }
+}
+@keyframes floatE {
+  0%,100% { transform: translateY(0px)   translateX(0px)  rotate(0deg);    }
+  45%      { transform: translateY(-12px) translateX(14px) rotate(-1.5deg); }
+  80%      { transform: translateY(-20px) translateX(-6px) rotate(2deg);    }
+}
+
+.float-a { animation: floatA 7s  ease-in-out infinite; }
+.float-b { animation: floatB 9s  ease-in-out infinite; }
+.float-c { animation: floatC 6s  ease-in-out infinite; }
+.float-d { animation: floatD 11s ease-in-out infinite; }
+.float-e { animation: floatE 8s  ease-in-out infinite; }
+
+/* ── Aurora animations ───────────────────────────────── */
+@keyframes auroraText {
+  0%   { background-position: 0%   center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes auroraMove1 {
+  0%,100% { transform: translate(0px,  0px)  scale(1);    }
+  25%     { transform: translate(50px, -40px) scale(1.1);  }
+  50%     { transform: translate(20px,  30px) scale(0.95); }
+  75%     { transform: translate(-30px, 10px) scale(1.05); }
+}
+@keyframes auroraMove2 {
+  0%,100% { transform: translate(0px,   0px)  scale(1);   }
+  33%     { transform: translate(-60px,  40px) scale(1.08);}
+  66%     { transform: translate(35px,  -25px) scale(0.93);}
+}
+@keyframes auroraMove3 {
+  0%,100% { transform: translate(0px,  0px)  scale(1);    }
+  50%     { transform: translate(40px,  45px) scale(1.07); }
+}
+@keyframes auroraMove4 {
+  0%,100% { transform: translate(0px,   0px)  scale(1);   }
+  40%     { transform: translate(-45px, -35px) scale(1.1); }
+  80%     { transform: translate(25px,   20px) scale(0.96);}
+}
+@keyframes scrollBounce {
+  0%,100% { transform: translateY(0);    opacity: 1;   }
+  50%     { transform: translateY(8px);  opacity: 0.5; }
+}
+
+@keyframes slowZoom {
+  from { transform: scale(1.05); }
+  to   { transform: scale(1.12); }
+}
+
+.aurora-1 { animation: auroraMove1 14s ease-in-out infinite; }
+.aurora-2 { animation: auroraMove2 18s ease-in-out infinite; }
+.aurora-3 { animation: auroraMove3 11s ease-in-out infinite; }
+.aurora-4 { animation: auroraMove4 16s ease-in-out infinite; }
+.scroll-bounce { animation: scrollBounce 1.8s ease-in-out infinite; }

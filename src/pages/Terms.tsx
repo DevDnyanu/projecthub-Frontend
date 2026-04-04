@@ -26,9 +26,9 @@ const Terms = () => (
 
       <div className="pt-8">
         <Section title="2. Use of the Platform">
-          <p>ProjectHub is a marketplace that connects clients (buyers) with freelancers (sellers).
+          <p>ProjectHub is a marketplace that connects clients (buyers) with experts (sellers).
             We provide the platform, tools, and infrastructure — but are not a party to any contract
-            between clients and freelancers.</p>
+            between clients and experts.</p>
           <p>You agree not to: post fraudulent projects or bids, impersonate other users, use the
             platform to spam or harass, attempt to circumvent our payment system, or violate any
             applicable law.</p>
@@ -48,7 +48,7 @@ const Terms = () => (
           <p>All projects and bids are subject to admin review before going live. ProjectHub reserves
             the right to reject any project or bid that violates our community guidelines, contains
             inappropriate content, or is otherwise deemed unsuitable.</p>
-          <p>Clients are responsible for ensuring project descriptions are accurate. Freelancers are
+          <p>Clients are responsible for ensuring project descriptions are accurate. Experts are
             responsible for delivering work as described in their bids.</p>
         </Section>
       </div>

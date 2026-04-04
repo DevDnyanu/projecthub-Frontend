@@ -107,15 +107,20 @@ const Footer = () => {
               </div>
               <div className="leading-tight">
                 <p className="font-heading text-xl font-extrabold text-white tracking-tight">ProjectHub</p>
-                <p className="text-[11px] text-slate-500 font-medium">India's Freelance Marketplace</p>
               </div>
             </Link>
 
             {/* Tagline */}
-            <p className="text-[13px] text-slate-400 leading-relaxed max-w-xs">
-              Connecting India's top freelancers with growing businesses since 2023.
-              Post a project, place a bid, and get work done — professionally.
-            </p>
+            <div className="space-y-3">
+              <p className="text-[15px] font-semibold text-white leading-snug">
+                Connect with Global Experts.<br />
+                Build anything.
+              </p>
+              <p className="text-[13px] text-slate-400 leading-relaxed max-w-xs">
+                Work with the world's most trusted professionals across every domain.
+                Start your project with confidence.
+              </p>
+            </div>
 
             {/* Contact */}
             <ul className="space-y-2.5">
@@ -156,25 +161,22 @@ const Footer = () => {
               For Clients
             </h4>
             <ul className="space-y-3.5">
-              <FLink label="Browse Projects"  onClick={() => navigate("/")} />
+              <FLink label="Home"  onClick={() => navigate("/")} />
               <FLink label="Post a Project"   onClick={() => goProtected("/post-project")} />
               <FLink label="How It Works"     to="/how-it-works" />
-              <FLink label="Pricing"          to="/pricing" />
-              <FLink label="Help Center"      to="/help" />
+              <FLink label="Wallet & Payments" onClick={() => goProtected("/wallet-guide")} />
             </ul>
           </div>
 
-          {/* For Freelancers */}
+          {/* For Experts */}
           <div className="lg:col-span-2">
             <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-              For Freelancers
+              For Experts
             </h4>
             <ul className="space-y-3.5">
-              <FLink label="Find Projects"   onClick={() => navigate("/")} />
-              <FLink label="My Projects"     onClick={() => goProtected("/my-projects")} />
-              <FLink label="Dashboard"       onClick={() => goProtected("/admin")} />
-              <FLink label="Bidding Guide"   to="/help" />
-              <FLink label="Success Stories" to="/blog" />
+              <FLink label="Find Projects"    onClick={() => navigate("/")} />
+              <FLink label="My Projects"      onClick={() => goProtected("/my-projects")} />
+              <FLink label="Dashboard"        onClick={() => goProtected("/admin")} />
             </ul>
           </div>
 
@@ -187,20 +189,20 @@ const Footer = () => {
               <FLink label="About Us"   to="/about"      />
               <FLink label="Blog"       to="/blog"       />
               <FLink label="Careers"    to="/careers"    />
-              <FLink label="Press"      to="/press"      />
               <FLink label="Contact"    to="/contact"    />
             </ul>
           </div>
-
           {/* Newsletter */}
           <div className="lg:col-span-2 sm:col-span-2">
             <h4 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-500">
               Newsletter
             </h4>
-            <Newsletter />
+            <p className="text-[13px] text-slate-400 mb-4 leading-relaxed">
+              Get the latest projects and platform news — no spam, ever.
+            </p>
 
             {/* Trust badge */}
-            <div className="mt-7 flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div className="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <CheckCircle2 className="h-4 w-4 text-emerald-400" />
               </div>

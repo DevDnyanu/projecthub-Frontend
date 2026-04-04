@@ -20,6 +20,9 @@ import VerifyEmail    from "./pages/VerifyEmail";
 import ResetPassword  from "./pages/ResetPassword";
 import UserProfile    from "./pages/UserProfile";
 import Settings       from "./pages/Settings";
+import Wallet         from "./pages/Wallet";
+import WalletGuide    from "./pages/WalletGuide";
+import Messages       from "./pages/Messages";
 import NotFound       from "./pages/NotFound";
 
 // Footer pages
@@ -62,31 +65,32 @@ const AppRoutes = () => {
 
     <main className="flex-1">
       <Routes>
-        {/* ── Public ── */}
+        {/* ── Public (no login required) ── */}
         <Route path="/"               element={<Index />} />
         <Route path="/login"          element={<UserLogin />} />
         <Route path="/verify-email"   element={<VerifyEmail />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/users/:id"      element={<UserProfile />} />
 
-        {/* ── Authenticated ── */}
+        {/* ── All other pages require login ── */}
+        <Route path="/users/:id"    element={<RequireAuth><UserProfile /></RequireAuth>} />
         <Route path="/project/:id"  element={<RequireAuth><ProjectDetail /></RequireAuth>} />
         <Route path="/post-project" element={<RequireAuth><PostProject /></RequireAuth>} />
         <Route path="/my-projects"  element={<RequireAuth><MyProjects /></RequireAuth>} />
         <Route path="/admin"        element={<RequireAuth><AdminDashboard /></RequireAuth>} />
         <Route path="/settings"     element={<RequireAuth><Settings /></RequireAuth>} />
-
-        {/* ── Footer pages (public) ── */}
-        <Route path="/about"        element={<About />} />
-        <Route path="/contact"      element={<Contact />} />
-        <Route path="/help"         element={<Help />} />
-        <Route path="/terms"        element={<Terms />} />
-        <Route path="/privacy"      element={<Privacy />} />
-        <Route path="/blog"         element={<Blog />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/pricing"      element={<Pricing />} />
-        <Route path="/careers"      element={<Careers />} />
-        <Route path="/press"        element={<Press />} />
+        <Route path="/wallet"       element={<RequireAuth><Wallet /></RequireAuth>} />
+        <Route path="/wallet-guide" element={<RequireAuth><WalletGuide /></RequireAuth>} />
+        <Route path="/messages"     element={<RequireAuth><Messages /></RequireAuth>} />
+        <Route path="/about"        element={<RequireAuth><About /></RequireAuth>} />
+        <Route path="/contact"      element={<RequireAuth><Contact /></RequireAuth>} />
+        <Route path="/help"         element={<RequireAuth><Help /></RequireAuth>} />
+        <Route path="/terms"        element={<RequireAuth><Terms /></RequireAuth>} />
+        <Route path="/privacy"      element={<RequireAuth><Privacy /></RequireAuth>} />
+        <Route path="/blog"         element={<RequireAuth><Blog /></RequireAuth>} />
+        <Route path="/how-it-works" element={<RequireAuth><HowItWorks /></RequireAuth>} />
+        <Route path="/pricing"      element={<RequireAuth><Pricing /></RequireAuth>} />
+        <Route path="/careers"      element={<RequireAuth><Careers /></RequireAuth>} />
+        <Route path="/press"        element={<RequireAuth><Press /></RequireAuth>} />
 
         {/* ── Redirects ── */}
         <Route path="/admin/login"  element={<Navigate to="/login" replace />} />

@@ -25,7 +25,7 @@ const plans = [
     name: "Pro",
     price: "₹999",
     period: "/month",
-    desc: "For growing businesses & active freelancers",
+    desc: "For growing businesses & active experts",
     color: "border-primary",
     badge: "Most Popular",
     features: [

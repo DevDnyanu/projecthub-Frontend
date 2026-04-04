@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import BidModal from "@/components/BidModal";
 import RatingModal from "@/components/RatingModal";
 import PaymentModal from "@/components/PaymentModal";
+import EscrowStatusCard from "@/components/EscrowStatusCard";
+import ChatModal from "@/components/ChatModal";
 import {
   ArrowLeft, IndianRupee, Users, Star,
   Send, CheckCircle2, Linkedin, Clock, Gavel,
@@ -93,12 +95,14 @@ const BidCard = ({
   projectStatus,
   updatingBid,
   onAction,
+  onMessage,
 }: {
   bid: ApiBid;
   isOwner: boolean;
   projectStatus: string;
   updatingBid: string | null;
   onAction: (id: string, status: "accepted" | "rejected") => void;
+  onMessage: (bidder: ApiBid["bidder"]) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const MAX_LEN = 200;
@@ -212,6 +216,16 @@ const BidCard = ({
                 )}
               </div>
 
+              {/* Message button — always visible */}
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1 h-7 text-[11px] px-3 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={() => onMessage(bid.bidder)}
+              >
+                <MessageCircle className="h-3 w-3" /> Message
+              </Button>
+
               {/* Owner actions */}
               {isOwner && bid.status === "pending" && projectStatus === "open" && (
                 <div className="flex items-center gap-2">
@@ -271,6 +285,7 @@ const ProjectDetail = () => {
   const [showBidModal, setShowBidModal] = useState(false);
   const [updatingBid, setUpdatingBid] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"details" | "proposals">("details");
+  const [bidSort, setBidSort] = useState<"newest" | "lowest" | "highest_rated">("newest");
   const [bookmarked, setBookmarked] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [hasRated, setHasRated] = useState(false);
@@ -278,6 +293,7 @@ const ProjectDetail = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [acceptedBidForPayment, setAcceptedBidForPayment] = useState<ApiBid | null>(null);
   const [paymentDone, setPaymentDone] = useState(false);
+  const [chatUser, setChatUser] = useState<ApiBid["bidder"] | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!id) return;
@@ -319,20 +335,33 @@ const ProjectDetail = () => {
       if (status === "accepted") {
         toast({
           title: "Bid accepted!",
-          description: "Project is now in progress. Freelancer has been notified.",
+          description: "Funds locked in escrow. Project is now in progress.",
         });
       } else {
         toast({
           title: "Bid rejected",
-          description: "The freelancer has been notified.",
+          description: "The expert has been notified.",
         });
       }
     } catch (err) {
-      toast({
-        title: "Failed",
-        description: err instanceof Error ? err.message : "Try again.",
-        variant: "destructive",
-      });
+      const msg = err instanceof Error ? err.message : "Try again.";
+      const isWalletError = msg.toLowerCase().includes("wallet") || msg.toLowerCase().includes("insufficient");
+      if (isWalletError) {
+        toast({
+          title: "Insufficient Wallet Balance",
+          description: (
+            <span>
+              {msg}{" "}
+              <a href="/wallet" className="underline font-semibold text-white">
+                Add Funds →
+              </a>
+            </span>
+          ) as unknown as string,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Failed", description: msg, variant: "destructive" });
+      }
     } finally {
       setUpdatingBid(null);
     }
@@ -361,7 +390,7 @@ const ProjectDetail = () => {
       await fetchAll();
       toast({
         title: "Project marked complete!",
-        description: "Freelancer has been notified.",
+        description: "Expert has been notified.",
       });
     } catch (err) {
       toast({
@@ -805,25 +834,40 @@ const ProjectDetail = () => {
                   </div>
                 )}
 
-                {project.status === "open" && !isOwner && (
+                {!isOwner && (
                 <div className="pt-1">
-                  {alreadyBid ? (
-                    <div className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 p-3 text-primary">
-                      <CheckCircle2 className="h-5 w-5 shrink-0" />
-                      <span className="text-sm font-semibold">Proposal submitted</span>
+                  {project.status === "open" ? (
+                    alreadyBid ? (
+                      <div className="flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 p-3 text-primary">
+                        <CheckCircle2 className="h-5 w-5 shrink-0" />
+                        <span className="text-sm font-semibold">Proposal submitted</span>
+                      </div>
+                    ) : (
+                      <Button
+                        className="w-full gap-2 cta-pulse" size="lg"
+                        onClick={() => {
+                          if (!user) { navigate("/login"); return; }
+                          setShowBidModal(true);
+                        }}
+                      >
+                        <Gavel className="h-4 w-4" />
+                        Place a Bid
+                      </Button>
+                    )
+                  ) : project.status === "in-progress" && myBid?.status === "rejected" ? (
+                    <div className="flex items-center gap-2 rounded-xl bg-muted border border-border p-3 text-muted-foreground">
+                      <ThumbsDown className="h-4 w-4 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Project Awarded</p>
+                        <p className="text-xs">This project was awarded to another freelancer.</p>
+                      </div>
                     </div>
-                  ) : (
-                    <Button
-                      className="w-full gap-2 cta-pulse" size="lg"
-                      onClick={() => {
-                        if (!user) { navigate("/login"); return; }
-                        setShowBidModal(true);
-                      }}
-                    >
-                      <Gavel className="h-4 w-4" />
-                      Place a Bid
-                    </Button>
-                  )}
+                  ) : project.status === "in-progress" && !myBid ? (
+                    <div className="flex items-center gap-2 rounded-xl bg-muted border border-border p-3 text-muted-foreground">
+                      <Users className="h-4 w-4 shrink-0" />
+                      <p className="text-sm">This project is no longer accepting proposals.</p>
+                    </div>
+                  ) : null}
                 </div>
               )}
 
@@ -895,12 +939,23 @@ const ProjectDetail = () => {
                 </div>
               )}
 
+              {/* Escrow status — visible to owner and accepted freelancer */}
+              {(isOwner || (!isOwner && myBid?.status === "accepted")) && ["in-progress", "completed"].includes(project.status) && (
+                <div className="pt-1">
+                  <EscrowStatusCard
+                    projectId={project.id}
+                    isClient={isOwner}
+                    isFreelancer={!isOwner && myBid?.status === "accepted"}
+                  />
+                </div>
+              )}
+
               {/* Owner: Pay Now — both confirmed, project completed */}
               {isOwner && project.status === "completed" && !paymentDone && bids.some((b) => b.status === "accepted") && (
                 <div className="pt-1 space-y-2">
                   <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 px-3 py-2 text-yellow-600 text-xs">
                     <CreditCard className="h-4 w-4 shrink-0" />
-                    Project complete — please release payment to freelancer
+                    Project complete — please release payment to expert
                   </div>
                   <Button
                     className="w-full gap-2 bg-primary hover:bg-primary/90"
@@ -953,7 +1008,7 @@ const ProjectDetail = () => {
                       onClick={() => setShowRatingModal(true)}
                     >
                       <StarIcon className="h-4 w-4" />
-                      Rate the Freelancer
+                      Rate the Expert
                     </Button>
                   )}
                 </>
@@ -1035,6 +1090,28 @@ const ProjectDetail = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Chat with Client button — visible to experts only */}
+              {!isOwner && user && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Button
+                    className="w-full gap-2"
+                    variant="outline"
+                    onClick={() =>
+                      setChatUser({
+                        _id: project.seller.id,
+                        name: project.seller.name,
+                        avatar: project.seller.avatar,
+                        rating: project.seller.rating,
+                        completedProjects: project.seller.completedProjects,
+                      })
+                    }
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Chat with Client
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1045,6 +1122,25 @@ const ProjectDetail = () => {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Bid list */}
           <div className="lg:col-span-2 space-y-4">
+
+            {/* Header row */}
+            {bids.length > 0 && (
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-sm font-semibold text-foreground">
+                  {bids.length} Proposal{bids.length !== 1 ? "s" : ""}
+                </p>
+                <select
+                  value={bidSort}
+                  onChange={(e) => setBidSort(e.target.value as typeof bidSort)}
+                  className="text-[13px] rounded-lg border border-border bg-card text-foreground px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="lowest">Lowest Price</option>
+                  <option value="highest_rated">Highest Rated</option>
+                </select>
+              </div>
+            )}
+
             {bids.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-12 text-center">
                 <Gavel className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -1065,7 +1161,13 @@ const ProjectDetail = () => {
                 )}
               </div>
             ) : (
-              bids.map((bid, i) => (
+              [...bids]
+                .sort((a, b) => {
+                  if (bidSort === "lowest") return a.amount - b.amount;
+                  if (bidSort === "highest_rated") return (b.bidder.rating ?? 0) - (a.bidder.rating ?? 0);
+                  return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+                })
+                .map((bid, i) => (
                 <div key={bid._id} className="bid-enter" style={{ animationDelay: `${i * 0.07}s` }}>
                   <BidCard
                     bid={bid}
@@ -1073,6 +1175,7 @@ const ProjectDetail = () => {
                     projectStatus={project.status}
                     updatingBid={updatingBid}
                     onAction={handleBidAction}
+                    onMessage={(bidder) => setChatUser(bidder)}
                   />
                 </div>
               ))
@@ -1184,9 +1287,19 @@ const ProjectDetail = () => {
         isOpen={showRatingModal}
         onClose={() => setShowRatingModal(false)}
         projectId={id!}
-        freelancerName={bids.find((b) => b.status === "accepted")?.bidder.name ?? "Freelancer"}
+        freelancerName={bids.find((b) => b.status === "accepted")?.bidder.name ?? "Expert"}
         onRated={(stars, comment) => { setHasRated(true); setSubmittedRating({ stars, comment }); fetchAll(); }}
       />
+
+      {/* Chat Modal */}
+      {chatUser && (
+        <ChatModal
+          otherUser={chatUser}
+          projectId={id}
+          projectTitle={project?.title}
+          onClose={() => setChatUser(null)}
+        />
+      )}
     </div>
   );
 };

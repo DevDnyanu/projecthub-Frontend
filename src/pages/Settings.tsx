@@ -533,7 +533,7 @@ export default function Settings() {
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* ── Sidebar ─────────────────────────────────── */}
-          <aside className="lg:w-52 shrink-0 card-enter" style={{ animationDelay: "0.04s" }}>
+          <aside className="lg:w-52 shrink-0 card-enter lg:sticky lg:top-[4.5rem] lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto" style={{ animationDelay: "0.04s" }}>
 
             {/* Mobile: horizontal scroll */}
             <div className="lg:hidden flex gap-2 overflow-x-auto pb-1 no-scrollbar">

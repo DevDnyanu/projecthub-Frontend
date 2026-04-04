@@ -79,7 +79,10 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
 
   return (
     <Link to={`/project/${project.id}`} className="block group card-enter" style={{ animationDelay: `${index * 0.07}s` }}>
-      <div className="relative h-full rounded-2xl border border-border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30 card-glow">
+      <div className="relative h-full rounded-2xl border border-border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-[0_8px_30px_-8px_hsl(220_85%_58%/0.35)]">
+
+        {/* Top gradient accent line on hover */}
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-primary via-violet-500 to-sky-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
 
         {/* Status color strip */}
         <div className={`h-1 w-full bg-gradient-to-r ${cfg.strip}`} />
@@ -152,7 +155,10 @@ const AssignedCard = ({ project, index }: { project: Project; index: number }) =
 
   return (
     <Link to={`/project/${project.id}`} className="block group card-enter" style={{ animationDelay: `${index * 0.07}s` }}>
-      <div className="relative h-full rounded-2xl border border-border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30 card-glow">
+      <div className="relative h-full rounded-2xl border border-border bg-card overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-[0_8px_30px_-8px_hsl(220_85%_58%/0.35)]">
+
+        {/* Top gradient accent line on hover */}
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-primary via-violet-500 to-sky-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
 
         <div className={`h-1 w-full bg-gradient-to-r ${cfg.strip}`} />
 
@@ -338,7 +344,7 @@ const MyProjects = () => {
               <EmptyState
                 icon={Package}
                 title="No projects posted yet"
-                description="Post your first project and start receiving bids from skilled freelancers."
+                description="Post your first project and start receiving bids from skilled experts."
                 showCTA
               />
             ) : (

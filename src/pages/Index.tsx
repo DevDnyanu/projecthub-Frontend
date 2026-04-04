@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { mapProject } from "@/context/ProjectContext";
 import { Project } from "@/types/project";
+import { useAuth } from "@/context/AuthContext";
 import ProjectCard from "@/components/ProjectCard";
 import ScrollReveal from "@/components/ScrollReveal";
 import CategoryFilter from "@/components/CategoryFilter";
 import {
   Search, TrendingUp, Users, FolderOpen, X, Loader2,
   Briefcase, ShieldCheck, Star, Clock, ArrowRight, Sparkles,
+  IndianRupee, Gavel, Lock,
 } from "lucide-react";
 
 /* ── Popular search tags ── */
@@ -20,6 +23,8 @@ const POPULAR = [
 const TRUST_AVATARS = ["RK", "AS", "MP", "NJ", "VS"];
 
 const Index = () => {
+  const navigate                      = useNavigate();
+  const { isLoggedIn }                = useAuth();
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState("");
@@ -99,31 +104,25 @@ const Index = () => {
         />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="py-16 sm:py-20 lg:py-24">
+          <div className="py-10 sm:py-12 lg:py-16 grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
 
-            {/* Live badge */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 py-2 backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              <span className="text-[13px] font-semibold text-white/85">
-                {openCount > 0 ? `${openCount} projects open right now` : "New projects added daily"}
-              </span>
-            </div>
+          {/* ── LEFT COLUMN ── */}
+          <div className="lg:col-span-7">
+
 
             {/* Headline */}
-            <h1 className="font-heading text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.08]">
-              Hire expert freelancers.
+            <h1 className="font-heading text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-5xl xl:text-6xl leading-[1.1]">
+              Connect with
+              <br />
+              <span className="text-white">Global Experts.</span>
               <br />
               <span className="bg-gradient-to-r from-yellow-300 via-amber-300 to-orange-400 bg-clip-text text-transparent">
                 Build anything.
               </span>
             </h1>
 
-            <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-white/65 sm:text-lg">
-              Connect with India's top verified freelancers across design, development, marketing,
-              finance and more. Post a project or bid on live opportunities today.
+            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/70 sm:text-base">
+              Work with the world's most trusted professionals across every domain. Start your project with confidence.
             </p>
 
             {/* Search bar */}
@@ -157,13 +156,13 @@ const Index = () => {
               </div>
 
               {/* Popular searches */}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-white/45">Popular:</span>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-white/40 uppercase tracking-wide">Popular:</span>
                 {POPULAR.map((tag) => (
                   <button
                     key={tag}
                     onClick={() => setSearch(tag)}
-                    className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-xs font-medium text-white/70 backdrop-blur-sm hover:bg-white/15 hover:text-white transition-all duration-150"
+                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur-sm hover:bg-white/20 hover:text-white hover:border-white/30 transition-all duration-150"
                   >
                     {tag}
                   </button>
@@ -171,95 +170,171 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Stats + social proof */}
-            <div className="mt-10 flex flex-wrap items-center gap-6 sm:gap-8">
-
-              {/* Social proof avatars */}
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {TRUST_AVATARS.map((init, i) => (
-                    <div
-                      key={i}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-slate-900 bg-gradient-to-br from-primary to-violet-600 text-[10px] font-bold text-white"
-                    >
-                      {init}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex items-center gap-0.5">
-                    {[1,2,3,4,5].map((s) => (
-                      <Star key={s} className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-[12px] text-white/55 leading-tight mt-0.5">Trusted by 10,000+ businesses</p>
-                </div>
-              </div>
-
-              <div className="h-8 w-px bg-white/15 hidden sm:block" />
-
-              {/* Stat 1 */}
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
+            {/* Stats */}
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2.5 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-sm px-4 py-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15">
                   <FolderOpen className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-xl font-extrabold text-white leading-none">
+                  <p className="text-lg font-extrabold text-white leading-none">
                     {loading ? "—" : allProjects.length.toLocaleString()}
                   </p>
                   <p className="text-[11px] text-white/50 mt-0.5">Total Projects</p>
                 </div>
               </div>
 
-              <div className="h-8 w-px bg-white/15 hidden sm:block" />
-
-              {/* Stat 2 */}
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 backdrop-blur-sm px-4 py-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20">
                   <TrendingUp className="h-4 w-4 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-xl font-extrabold text-white leading-none">
+                  <p className="text-lg font-extrabold text-white leading-none">
                     {loading ? "—" : openCount.toLocaleString()}
                   </p>
-                  <p className="text-[11px] text-white/50 mt-0.5">Open Projects</p>
+                  <p className="text-[11px] text-emerald-400/70 mt-0.5">Open Now</p>
                 </div>
               </div>
 
-              <div className="h-8 w-px bg-white/15 hidden sm:block" />
-
-              {/* Stat 3 */}
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/20 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5 rounded-2xl border border-sky-500/25 bg-sky-500/10 backdrop-blur-sm px-4 py-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20">
                   <Users className="h-4 w-4 text-sky-400" />
                 </div>
                 <div>
-                  <p className="text-xl font-extrabold text-white leading-none">
+                  <p className="text-lg font-extrabold text-white leading-none">
                     {loading ? "—" : totalBids.toLocaleString()}
                   </p>
-                  <p className="text-[11px] text-white/50 mt-0.5">Active Bids</p>
+                  <p className="text-[11px] text-sky-400/70 mt-0.5">Active Bids</p>
                 </div>
               </div>
             </div>
+          </div>{/* /LEFT COLUMN */}
+
+          {/* ── RIGHT COLUMN — Latest open projects ── */}
+          <div className="lg:col-span-5 hidden lg:flex flex-col gap-3">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">
+                  Latest Open Projects
+                </p>
+              </div>
+              <button
+                onClick={() => document.getElementById("browse-section")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-[11px] text-white/50 hover:text-white transition-colors flex items-center gap-1 border border-white/15 bg-white/8 rounded-full px-2.5 py-1 hover:bg-white/15"
+              >
+                View all <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
+
+            {loading ? (
+              [1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border border-white/15 bg-white/8 backdrop-blur-md p-5 animate-pulse">
+                  <div className="h-4 bg-white/15 rounded w-3/4 mb-3" />
+                  <div className="h-3 bg-white/10 rounded w-full mb-2" />
+                  <div className="h-3 bg-white/10 rounded w-2/3" />
+                </div>
+              ))
+            ) : (
+              allProjects
+                .filter((p) => p.status === "open")
+                .slice(0, 2)
+                .map((project) => (
+                  <button
+                    key={project.id}
+                    onClick={() => {
+                      if (!isLoggedIn) { navigate("/login"); return; }
+                      navigate(`/project/${project.id}`);
+                    }}
+                    className="group w-full text-left rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-5 hover:bg-white/18 hover:border-white/30 transition-all duration-200 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20"
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2 mb-2.5">
+                      <p className="font-semibold text-white text-sm leading-snug line-clamp-1">
+                        {project.title}
+                      </p>
+                      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        Open
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-[12px] text-white/60 line-clamp-1 mb-3 leading-relaxed">
+                      {project.description}
+                    </p>
+
+                    {/* Skills */}
+                    {project.skills?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {project.skills.slice(0, 2).map((s) => (
+                          <span key={s} className="rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[10px] text-white/75 font-medium">
+                            {s}
+                          </span>
+                        ))}
+                        {project.skills.length > 2 && (
+                          <span className="rounded-full bg-white/8 border border-white/10 px-2 py-0.5 text-[10px] text-white/40">+{project.skills.length - 2} more</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-2.5 border-t border-white/10">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1 text-[12px] font-bold text-white">
+                          <IndianRupee className="h-3 w-3" />
+                          {project.budget.min.toLocaleString("en-IN")}–{project.budget.max.toLocaleString("en-IN")}
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] text-white/45">
+                          <Gavel className="h-3 w-3" />
+                          {project.bids} bids
+                        </span>
+                      </div>
+                      {!isLoggedIn ? (
+                        <span className="flex items-center gap-1 text-[11px] text-white/40 border border-white/15 rounded-full px-2 py-0.5">
+                          <Lock className="h-3 w-3" /> Login
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[11px] font-semibold text-white/70 group-hover:text-white transition-colors">
+                          View <ArrowRight className="h-3 w-3" />
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))
+            )}
+
+            {/* CTA */}
+            {!isLoggedIn && (
+              <button
+                onClick={() => navigate("/login")}
+                className="mt-1 w-full rounded-2xl border border-white/15 bg-white/8 px-4 py-3 text-[13px] font-semibold text-white/70 hover:bg-white/15 hover:text-white transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                Sign in to access all projects
+              </button>
+            )}
           </div>
+
+          </div>{/* /grid */}
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════
           TRUST BAR
       ══════════════════════════════════════════════ */}
-      <section className="border-b border-border bg-muted/30">
+      <section className="border-b border-border bg-muted/20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 py-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 py-3.5">
             {[
-              { icon: ShieldCheck, text: "Verified freelancers only",   color: "text-emerald-500" },
-              { icon: Clock,       text: "Projects delivered on time",   color: "text-sky-500"     },
-              { icon: Star,        text: "4.9 / 5 average client rating", color: "text-amber-500"  },
-              { icon: Sparkles,    text: "100% payment protection",      color: "text-violet-500"  },
-            ].map(({ icon: Icon, text, color }) => (
-              <div key={text} className="flex items-center gap-2">
-                <Icon className={`h-4 w-4 shrink-0 ${color}`} />
-                <span className="text-[13px] font-medium text-muted-foreground">{text}</span>
+              { icon: ShieldCheck, text: "Verified experts only",      color: "text-emerald-500", bg: "bg-emerald-500/8" },
+              { icon: Clock,       text: "Projects delivered on time", color: "text-sky-500",     bg: "bg-sky-500/8"     },
+              { icon: Star,        text: "4.9 / 5 average rating",     color: "text-amber-500",   bg: "bg-amber-500/8"   },
+              { icon: Sparkles,    text: "100% payment protection",    color: "text-violet-500",  bg: "bg-violet-500/8"  },
+            ].map(({ icon: Icon, text, color, bg }) => (
+              <div key={text} className={`flex items-center gap-2 rounded-full ${bg} border border-border px-3 py-1.5`}>
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${color}`} />
+                <span className="text-[12px] font-medium text-muted-foreground">{text}</span>
               </div>
             ))}
           </div>
@@ -269,7 +344,7 @@ const Index = () => {
       {/* ══════════════════════════════════════════════
           BROWSE SECTION
       ══════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <section id="browse-section" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 
         {/* Section header */}
         <div className="mb-7 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
@@ -389,20 +464,26 @@ const Index = () => {
 
         {/* Bottom CTA */}
         {!loading && results.length > 0 && (
-          <div className="mt-14 rounded-2xl bg-gradient-to-r from-primary/8 via-primary/5 to-violet-500/8 border border-primary/15 px-8 py-8 text-center">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">Ready to grow?</p>
-            <h3 className="font-heading text-xl font-bold text-foreground sm:text-2xl">
-              Don't see the right project?
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-              Post your requirements and let qualified freelancers come to you. Takes less than 2 minutes to go live.
-            </p>
-            <a
-              href="/post-project"
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-primary/30 hover:bg-primary/90 transition-all duration-150 hover:-translate-y-0.5"
-            >
-              Post a Project <ArrowRight className="h-4 w-4" />
-            </a>
+          <div className="mt-14 relative rounded-2xl overflow-hidden border border-primary/20 px-8 py-10 text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-primary/5 to-sky-500/8" />
+            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+            <div className="relative">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary uppercase tracking-widest mb-3">
+                <Sparkles className="h-3 w-3" /> Ready to grow?
+              </span>
+              <h3 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
+                Don't see the right project?
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                Post your requirements and let qualified experts come to you. Takes less than 2 minutes.
+              </p>
+              <a
+                href="/post-project"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all duration-150 hover:-translate-y-0.5"
+              >
+                Post a Project <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
           </div>
         )}
       </section>

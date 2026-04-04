@@ -2,14 +2,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Bell, Plus, User, Menu, LogOut, ChevronDown, X,
   Briefcase, FolderOpen, LayoutDashboard, Shield, Users, BarChart3,
-  Gavel, Clock, CheckCircle2, CheckCircle, Flag, Settings,
+  Gavel, Clock, CheckCircle2, CheckCircle, Flag, Settings, Wallet,
+  Moon, Sun, MessageCircle,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef, useCallback } from "react";
-import ThemeToggle from "@/components/ThemeToggle";
 import ProjectAlertsPanel from "@/components/ProjectAlertsPanel";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -19,30 +18,22 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
-interface UserResult {
-  id: string;
-  name: string;
-  avatar: string;
-  role: string;
-  rating: number;
-}
 
 const CATEGORY_NAV: { id: string; label: string; subcategories: string[] }[] = [];
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isLoggedIn, logout } = useAuth();
   const { toast } = useToast();
   const [hoveredCat, setHoveredCat] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserResult[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
   const [showAlertsPanel, setShowAlertsPanel] = useState(false);
   const [alertsBadge, setAlertsBadge] = useState(0);
   const alertsRef = useRef<HTMLDivElement>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -84,6 +75,16 @@ const Navbar = () => {
   }, [isLoggedIn, fetchNotifications]);
 
   useEffect(() => {
+    if (!isLoggedIn) return;
+    api.get<{ balance: number }>("/wallet")
+      .then((w) => setWalletBalance(w.balance))
+      .catch(() => {});
+    api.get<{ count: number }>("/chat/unread-count")
+      .then((r) => setUnreadMsgs(r.count))
+      .catch(() => {});
+  }, [isLoggedIn]);
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifPanel(false);
     };
@@ -110,30 +111,11 @@ const Navbar = () => {
   const readCount        = notifications.filter((n) => n.read).length;
   const unreadNotifs     = notifications.filter((n) => !n.read);
 
-  useEffect(() => {
-    if (searchQuery.trim().length < 2) { setSearchResults([]); setShowDropdown(false); return; }
-    const timer = setTimeout(() => {
-      api.get<UserResult[]>(`/users/search?q=${encodeURIComponent(searchQuery.trim())}`)
-        .then((data) => { setSearchResults(data); setShowDropdown(true); })
-        .catch(() => {});
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowDropdown(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleUserSelect = (id: string) => { setSearchQuery(""); setShowDropdown(false); navigate(`/users/${id}`); };
   const handleProtectedNav = (path: string) => { if (!isLoggedIn) navigate("/login"); else { navigate(path); setMobileOpen(false); } };
   const handleLogout = () => { logout(); navigate("/login"); toast({ title: "Signed out", description: "See you soon!" }); };
 
   const navItems = [
-    { label: "Browse",       path: "/",             icon: Users,     protected: false },
+    { label: "Home",         path: "/",             icon: Users,     protected: false },
     { label: "My Projects",  path: "/my-projects",  icon: FolderOpen, protected: true },
     { label: "Post Project", path: "/post-project", icon: Briefcase,  protected: true },
   ];
@@ -154,71 +136,42 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* ── Search ── */}
-        <div className="relative hidden md:flex flex-1 max-w-xs" ref={searchRef}>
-          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="Search users..."
-            className="pl-9 h-9 bg-secondary border-none rounded-lg text-sm focus-visible:ring-1 focus-visible:ring-primary/40 placeholder:text-muted-foreground"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-          />
-          {showDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
-              {searchResults.length > 0 ? searchResults.map((u) => (
-                <button key={u.id} onClick={() => handleUserSelect(u.id)}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-secondary transition-colors text-left">
-                  <Avatar className="h-7 w-7 shrink-0">
-                    <AvatarImage src={u.avatar} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{u.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <p className="text-sm font-medium text-foreground truncate flex-1">{u.name}</p>
-                  <Badge variant="secondary" className="text-[10px] shrink-0 capitalize">{u.role}</Badge>
-                </button>
-              )) : (
-                <p className="px-4 py-3 text-sm text-muted-foreground">No users found</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── Nav links — pill style ── */}
-        <nav className="hidden md:flex items-center gap-0.5 ml-1">
-          {navItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => item.protected ? handleProtectedNav(item.path) : navigate(item.path)}
-              className={`flex items-center px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                isActive(item.path)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-          {isLoggedIn && (
-            <button
-              onClick={() => handleProtectedNav("/admin")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                isActive("/admin")
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              {user?.is_admin
-                ? <><Shield className="h-3.5 w-3.5" />Admin</>
-                : <><BarChart3 className="h-3.5 w-3.5" />Dashboard</>}
-            </button>
-          )}
-        </nav>
-
         {/* ── Spacer ── */}
         <div className="flex-1" />
 
         {/* ── Right actions ── */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
+
+          {/* Nav links — right side */}
+          <nav className="hidden md:flex items-center gap-0.5 mr-1">
+            {navItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => item.protected ? handleProtectedNav(item.path) : navigate(item.path)}
+                className={`flex items-center px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap ${
+                  isActive(item.path)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+            {isLoggedIn && (
+              <button
+                onClick={() => handleProtectedNav("/admin")}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap ${
+                  isActive("/admin")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                {user?.is_admin
+                  ? <><Shield className="h-3.5 w-3.5 mr-1" />Admin</>
+                  : <><BarChart3 className="h-3.5 w-3.5 mr-1" />Dashboard</>}
+              </button>
+            )}
+          </nav>
 
           {/* Post Project */}
           <Button
@@ -229,11 +182,6 @@ const Navbar = () => {
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden lg:inline">Post Project</span>
           </Button>
-
-          {/* Theme */}
-          <div className="hidden md:flex">
-            <ThemeToggle />
-          </div>
 
           {/* Project Alerts */}
           {isLoggedIn && (
@@ -269,76 +217,99 @@ const Navbar = () => {
               </button>
 
               {showNotifPanel && (
-                <div className="fixed inset-x-2 top-[70px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-card/95 backdrop-blur-xl border border-border/70 rounded-2xl shadow-2xl shadow-black/30 z-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <div className="flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-primary" />
+                <div className="fixed inset-x-2 top-[70px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[340px] bg-card/95 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl shadow-black/30 z-50 overflow-hidden">
+
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/60">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                        <Bell className="h-3.5 w-3.5 text-primary" />
+                      </div>
                       <p className="font-semibold text-sm text-foreground">Notifications</p>
+                      {unreadCount > 0 && (
+                        <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+                          {unreadCount}
+                        </span>
+                      )}
                     </div>
                     <button onClick={() => { setShowNotifPanel(false); navigate(user?.is_admin ? "/admin?tab=bids" : "/my-projects"); }}
-                      className="text-xs text-primary hover:underline font-medium">View all</button>
+                      className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/10 transition-colors">
+                      View all
+                    </button>
                   </div>
 
-                  <div className="px-4 pt-3 pb-2">
-                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  {/* Stats */}
+                  <div className="px-4 pt-3 pb-2.5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5">
                       {user?.is_admin ? "Activity Summary" : "My Activity"}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
+                      <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
                           <Clock className="h-3.5 w-3.5 text-blue-500" />
                           <span className="text-[11px] text-muted-foreground">{user?.is_admin ? "New Projects" : "Bids Received"}</span>
                         </div>
-                        <p className="text-xl font-bold text-foreground">{newProjectsCount}</p>
+                        <p className="text-xl font-extrabold text-foreground leading-none">{newProjectsCount}</p>
                       </div>
-                      <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Clock className="h-3.5 w-3.5 text-yellow-500" />
+                      <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Gavel className="h-3.5 w-3.5 text-yellow-500" />
                           <span className="text-[11px] text-muted-foreground">{user?.is_admin ? "New Bids" : "Bid Updates"}</span>
                         </div>
-                        <p className="text-xl font-bold text-foreground">{newBidsCount}</p>
+                        <p className="text-xl font-extrabold text-foreground leading-none">{newBidsCount}</p>
                       </div>
-                      <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
+                      <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
                           <CheckCircle className="h-3.5 w-3.5 text-green-500" />
                           <span className="text-[11px] text-muted-foreground">Read</span>
                         </div>
-                        <p className="text-xl font-bold text-foreground">{readCount}</p>
+                        <p className="text-xl font-extrabold text-foreground leading-none">{readCount}</p>
                       </div>
-                      <div className="rounded-lg border border-border bg-muted/20 p-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
+                      <div className="rounded-xl border border-border bg-muted/20 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5">
                           <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-[11px] text-muted-foreground">Total</span>
                         </div>
-                        <p className="text-xl font-bold text-foreground">{notifications.length}</p>
+                        <p className="text-xl font-extrabold text-foreground leading-none">{notifications.length}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/60">
-                      <span className="text-xs font-semibold text-orange-500">Pending: {unreadCount}</span>
-                      <span className="text-xs font-semibold text-green-500">Done: {readCount}</span>
+                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/50">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 text-[11px] font-semibold text-orange-500">
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                        Pending: {unreadCount}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 border border-green-500/20 px-2.5 py-1 text-[11px] font-semibold text-green-500">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                        Done: {readCount}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="max-h-52 overflow-y-auto border-t border-border/60">
+                  {/* Notification list */}
+                  <div className="max-h-52 overflow-y-auto border-t border-border/60 no-scrollbar">
                     {unreadNotifs.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center px-4 py-6 gap-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10 border-2 border-green-500/30">
+                      <div className="flex flex-col items-center justify-center px-4 py-7 gap-2.5">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-green-500/10 border border-green-500/20">
                           <CheckCircle className="h-5 w-5 text-green-500" />
                         </div>
-                        <p className="text-sm text-muted-foreground">All caught up!</p>
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-foreground">All caught up!</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">No new notifications</p>
+                        </div>
                       </div>
                     ) : unreadNotifs.map((n) => (
                       <button key={n._id} onClick={() => handleNotifClick(n)}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-secondary transition-colors bg-primary/5">
+                        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-secondary/60 transition-colors border-b border-border/40 last:border-0 bg-primary/[0.03]">
                         <div className="relative mt-0.5 shrink-0">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 border border-primary/15">
                             {n.type === "new_project" ? <FolderOpen className="h-3.5 w-3.5 text-primary" /> : <Gavel className="h-3.5 w-3.5 text-primary" />}
                           </div>
-                          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive" />
+                          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-foreground leading-snug">{n.message}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                          <p className="text-[12.5px] font-medium text-foreground leading-snug">{n.message}</p>
+                          <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
                             {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                           </p>
                         </div>
@@ -346,13 +317,14 @@ const Navbar = () => {
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-muted/10">
+                  {/* Footer */}
+                  <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/60 bg-muted/15">
                     {unreadCount > 0
-                      ? <button onClick={handleMarkAllRead} className="text-xs text-primary hover:underline font-medium">Mark all read</button>
+                      ? <button onClick={handleMarkAllRead} className="text-xs font-semibold text-primary hover:text-primary/70 transition-colors">Mark all read</button>
                       : <span className="text-xs text-muted-foreground">Up to date</span>}
                     <button onClick={() => { setShowNotifPanel(false); navigate(user?.is_admin ? "/admin" : "/my-projects"); }}
-                      className="text-xs text-primary hover:underline font-medium">
-                      {user?.is_admin ? "Admin Panel" : "My Projects"}
+                      className="text-xs font-semibold text-primary hover:text-primary/70 transition-colors">
+                      {user?.is_admin ? "Admin Panel" : "My Projects"} →
                     </button>
                   </div>
                 </div>
@@ -397,8 +369,25 @@ const Navbar = () => {
                 <DropdownMenuItem onClick={() => navigate("/post-project")} className="cursor-pointer">
                   <Briefcase className="h-4 w-4 mr-2" /> Post a Project
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/wallet")} className="cursor-pointer">
+                  <Wallet className="h-4 w-4 mr-2" /> My Wallet
+                  {walletBalance !== null && (
+                    <span className="ml-auto text-xs text-muted-foreground">₹{walletBalance.toLocaleString("en-IN")}</span>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/messages")} className="cursor-pointer">
+                  <MessageCircle className="h-4 w-4 mr-2" /> Messages
+                  {unreadMsgs > 0 && (
+                    <span className="ml-auto text-xs font-bold text-white bg-primary rounded-full px-1.5 py-0.5 leading-none">{unreadMsgs}</span>
+                  )}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
                   <Settings className="h-4 w-4 mr-2" /> Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="cursor-pointer">
+                  {theme === "dark"
+                    ? <><Sun className="h-4 w-4 mr-2" /> Light Mode</>
+                    : <><Moon className="h-4 w-4 mr-2" /> Dark Mode</>}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
@@ -484,14 +473,6 @@ const Navbar = () => {
             </div>
           )}
 
-          <div className="px-4 py-3 border-b border-border/60">
-            <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-10 bg-secondary border-none h-9 rounded-lg"
-                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-            </div>
-          </div>
-
           <nav className="px-3 py-2 space-y-0.5">
             {navItems.map((item) => (
               <button key={item.path}
@@ -515,6 +496,34 @@ const Navbar = () => {
             )}
           </nav>
 
+          {isLoggedIn && (
+            <div className="px-3 pb-1">
+              <button
+                onClick={() => { handleProtectedNav("/wallet"); setMobileOpen(false); }}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors text-left ${
+                  location.pathname === "/wallet" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                <Wallet className="h-4 w-4 shrink-0" />
+                My Wallet
+                {walletBalance !== null && (
+                  <span className="ml-auto text-xs font-semibold text-primary">₹{walletBalance.toLocaleString("en-IN")}</span>
+                )}
+              </button>
+              <button
+                onClick={() => { handleProtectedNav("/messages"); setMobileOpen(false); }}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors text-left ${
+                  location.pathname === "/messages" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                <MessageCircle className="h-4 w-4 shrink-0" />
+                Messages
+                {unreadMsgs > 0 && (
+                  <span className="ml-auto text-xs font-bold text-white bg-primary rounded-full px-1.5 py-0.5 leading-none">{unreadMsgs}</span>
+                )}
+              </button>
+            </div>
+          )}
           <div className="px-4 pb-3">
             <button onClick={() => { handleProtectedNav("/post-project"); setMobileOpen(false); }}
               className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground">
@@ -522,19 +531,26 @@ const Navbar = () => {
             </button>
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border/60 bg-secondary/20">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Theme</span>
-              <ThemeToggle />
-            </div>
+          <div className="px-3 pb-1">
+            <button
+              onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); }}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors text-left text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              {theme === "dark"
+                ? <><Sun className="h-4 w-4 shrink-0" /><span>Light Mode</span></>
+                : <><Moon className="h-4 w-4 shrink-0" /><span>Dark Mode</span></>}
+            </button>
+          </div>
+
+          <div className="px-4 py-3 border-t border-border/60 bg-secondary/20">
             {isLoggedIn ? (
               <button onClick={() => { handleLogout(); setMobileOpen(false); }}
-                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors">
+                className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-destructive border border-destructive/30 hover:bg-destructive/10 transition-colors">
                 <LogOut className="h-4 w-4" /> Sign Out
               </button>
             ) : (
-              <Link to="/login" onClick={() => setMobileOpen(false)}>
-                <Button size="sm" className="gap-1.5"><User className="h-4 w-4" /> Sign In</Button>
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="block">
+                <Button size="sm" className="w-full gap-1.5"><User className="h-4 w-4" /> Sign In</Button>
               </Link>
             )}
           </div>
