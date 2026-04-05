@@ -20,6 +20,7 @@ import {
   ThumbsUp, ThumbsDown, Paperclip, MapPin, Zap,
   Bookmark, Share2, ShieldCheck, CreditCard, CalendarDays,
   BadgeCheck, MessageCircle, Flag, PartyPopper, UploadCloud, StarIcon,
+  X, ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -88,6 +89,118 @@ const StarRating = ({ rating, max = 5 }: { rating: number; max?: number }) => (
   </div>
 );
 
+/* ── Bidder Profile Modal ── */
+const BidderProfileModal = ({
+  bidder,
+  onClose,
+}: {
+  bidder: ApiBid["bidder"];
+  onClose: () => void;
+}) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    onClick={onClose}
+  >
+    <div
+      className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+      onClick={e => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-primary" />
+          <p className="font-semibold text-sm text-foreground">Freelancer Profile</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+        {/* Avatar + Name */}
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16 rounded-2xl border-2 border-border shrink-0">
+            <AvatarImage src={bidder.avatar} />
+            <AvatarFallback className="rounded-2xl bg-primary/10 text-primary font-bold text-xl">
+              {bidder.name?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-lg text-foreground leading-tight">{bidder.name}</p>
+            <div className="flex items-center gap-1 mt-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className={`h-3.5 w-3.5 ${i < Math.round(bidder.rating) ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"}`} />
+              ))}
+              <span className="ml-1 text-xs text-muted-foreground">{bidder.rating?.toFixed(1)}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {bidder.experienceLevel && (
+                <span className="rounded-md border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground/70 capitalize">
+                  {bidder.experienceLevel}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+            <p className="text-xl font-extrabold text-foreground">{bidder.completedProjects ?? 0}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Projects Done</p>
+          </div>
+          <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+            <p className="text-xl font-extrabold text-foreground">{bidder.rating?.toFixed(1) ?? "—"}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Rating</p>
+          </div>
+        </div>
+
+        {/* Bio */}
+        {bidder.bio && (
+          <div className="rounded-xl border border-border bg-muted/20 p-4">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">About</p>
+            <p className="text-sm text-foreground leading-relaxed">{bidder.bio}</p>
+          </div>
+        )}
+
+        {/* Skills */}
+        {bidder.skills && bidder.skills.length > 0 && (
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Skills</p>
+            <div className="flex flex-wrap gap-1.5">
+              {bidder.skills.map(s => (
+                <span key={s} className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Links */}
+        {(bidder.portfolioUrl || bidder.linkedinUrl) && (
+          <div className="flex gap-3 flex-wrap">
+            {bidder.portfolioUrl && (
+              <a href={bidder.portfolioUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                <ExternalLink className="h-3.5 w-3.5" /> Portfolio
+              </a>
+            )}
+            {bidder.linkedinUrl && (
+              <a href={bidder.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors">
+                <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
 /* ── Bid Card ── */
 const BidCard = ({
   bid,
@@ -96,6 +209,7 @@ const BidCard = ({
   updatingBid,
   onAction,
   onMessage,
+  onViewProfile,
 }: {
   bid: ApiBid;
   isOwner: boolean;
@@ -103,6 +217,7 @@ const BidCard = ({
   updatingBid: string | null;
   onAction: (id: string, status: "accepted" | "rejected") => void;
   onMessage: (bidder: ApiBid["bidder"]) => void;
+  onViewProfile: (bidder: ApiBid["bidder"]) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const MAX_LEN = 200;
@@ -133,20 +248,27 @@ const BidCard = ({
 
       <div className="p-5">
         <div className="flex gap-4">
-          {/* Avatar */}
-          <Avatar className="h-12 w-12 shrink-0 rounded-xl border-2 border-border">
-            <AvatarImage src={bid.bidder.avatar} />
-            <AvatarFallback className="bg-primary/10 text-primary font-bold rounded-xl text-base">
-              {bid.bidder.name[0]}
-            </AvatarFallback>
-          </Avatar>
+          {/* Avatar — clickable */}
+          <button onClick={() => onViewProfile(bid.bidder)} className="shrink-0 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <Avatar className="h-12 w-12 rounded-xl border-2 border-border hover:border-primary/50 transition-colors cursor-pointer">
+              <AvatarImage src={bid.bidder.avatar} />
+              <AvatarFallback className="bg-primary/10 text-primary font-bold rounded-xl text-base">
+                {bid.bidder.name[0]}
+              </AvatarFallback>
+            </Avatar>
+          </button>
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
             {/* Top row: name + bid amount */}
             <div className="flex items-start justify-between gap-3 mb-2">
               <div>
-                <p className="font-bold text-foreground text-sm leading-tight">{bid.bidder.name}</p>
+                <button
+                  onClick={() => onViewProfile(bid.bidder)}
+                  className="font-bold text-foreground text-sm leading-tight hover:text-primary transition-colors cursor-pointer text-left"
+                >
+                  {bid.bidder.name}
+                </button>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <StarRating rating={bid.bidder.rating} />
                   {bid.bidder.experienceLevel && (
@@ -294,6 +416,7 @@ const ProjectDetail = () => {
   const [acceptedBidForPayment, setAcceptedBidForPayment] = useState<ApiBid | null>(null);
   const [paymentDone, setPaymentDone] = useState(false);
   const [chatUser, setChatUser] = useState<ApiBid["bidder"] | null>(null);
+  const [profileBidder, setProfileBidder] = useState<ApiBid["bidder"] | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!id) return;
@@ -1176,6 +1299,7 @@ const ProjectDetail = () => {
                     updatingBid={updatingBid}
                     onAction={handleBidAction}
                     onMessage={(bidder) => setChatUser(bidder)}
+                    onViewProfile={(bidder) => setProfileBidder(bidder)}
                   />
                 </div>
               ))
@@ -1298,6 +1422,14 @@ const ProjectDetail = () => {
           projectId={id}
           projectTitle={project?.title}
           onClose={() => setChatUser(null)}
+        />
+      )}
+
+      {/* Bidder Profile Modal */}
+      {profileBidder && (
+        <BidderProfileModal
+          bidder={profileBidder}
+          onClose={() => setProfileBidder(null)}
         />
       )}
     </div>
