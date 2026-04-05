@@ -287,15 +287,14 @@ const AdminDashboard = () => {
     } catch { /* ignore */ }
   };
 
-  const viewBidderProfile = async (actorId: string, notifId: string) => {
+  const viewBidderProfile = async (actorId: string, notifId?: string) => {
     setLoadingProfile(true);
     setProfileModalOpen(true);
     setBidderProfile(null);
     try {
       const data = await api.get<BidderProfile>(`/admin/users/${actorId}`);
       setBidderProfile(data);
-      // auto-mark notification as read
-      markNotifRead(notifId);
+      if (notifId) markNotifRead(notifId);
     } catch {
       setProfileModalOpen(false);
     } finally {
@@ -871,16 +870,26 @@ const AdminDashboard = () => {
                   {bids.map((bid) => (
                     <div key={bid._id} className="px-4 sm:px-6 py-4">
                       <div className="flex items-start gap-3">
-                        <Avatar className="h-9 w-9 shrink-0 mt-0.5">
-                          <AvatarImage src={bid.bidder?.avatar} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                            {bid.bidder?.name?.[0] ?? "?"}
-                          </AvatarFallback>
-                        </Avatar>
+                        <button
+                          onClick={() => viewBidderProfile(bid.bidder._id)}
+                          className="shrink-0 mt-0.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          <Avatar className="h-9 w-9 hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer rounded-lg">
+                            <AvatarImage src={bid.bidder?.avatar} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold rounded-lg">
+                              {bid.bidder?.name?.[0] ?? "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <p className="font-semibold text-foreground text-sm">{bid.bidder?.name ?? "Unknown"}</p>
+                            <button
+                              onClick={() => viewBidderProfile(bid.bidder._id)}
+                              className="font-semibold text-foreground text-sm hover:text-primary transition-colors"
+                            >
+                              {bid.bidder?.name ?? "Unknown"}
+                            </button>
                             <span className="text-xs text-muted-foreground">on</span>
                             <p className="text-sm text-primary font-medium truncate max-w-[160px] sm:max-w-[200px]">{bid.project?.title ?? "—"}</p>
                             <Badge variant="outline" className={`text-[10px] ${adminStatusStyles[bid.adminStatus] ?? ""}`}>
@@ -904,53 +913,71 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Desktop action buttons */}
+                        <div className="hidden sm:flex flex-col gap-2 shrink-0">
+                          <Button
+                            size="sm" variant="outline"
+                            className="gap-1.5 text-primary hover:bg-primary/10 border-primary/30"
+                            onClick={() => viewBidderProfile(bid.bidder._id)}
+                          >
+                            <Eye className="h-3.5 w-3.5" /> Profile
+                          </Button>
+                          {bid.adminStatus === "pending_admin" && (
+                            <>
+                              <Button
+                                size="sm" variant="outline"
+                                className="gap-1.5 text-success hover:bg-success/10 border-success/30"
+                                onClick={() => handleApproveBid(bid._id)}
+                              >
+                                <Check className="h-3.5 w-3.5" /> Approve
+                              </Button>
+                              <Button
+                                size="sm" variant="outline"
+                                className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+                                onClick={() => handleRejectBid(bid._id)}
+                              >
+                                <X className="h-3.5 w-3.5" /> Reject
+                              </Button>
+                            </>
+                          )}
+                          {bid.adminStatus !== "pending_admin" && (
+                            <div className="flex items-center justify-center">
+                              {bid.adminStatus === "approved"
+                                ? <CheckCircle2 className="h-5 w-5 text-success" />
+                                : <X className="h-5 w-5 text-destructive" />
+                              }
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mobile action buttons — full width row below content */}
+                      <div className="flex gap-2 mt-3 sm:hidden">
+                        <Button
+                          size="sm" variant="outline"
+                          className="gap-1.5 text-primary hover:bg-primary/10 border-primary/30"
+                          onClick={() => viewBidderProfile(bid.bidder._id)}
+                        >
+                          <Eye className="h-3.5 w-3.5" /> Profile
+                        </Button>
                         {bid.adminStatus === "pending_admin" && (
-                          <div className="hidden sm:flex flex-col gap-2 shrink-0">
+                          <>
                             <Button
                               size="sm" variant="outline"
-                              className="gap-1.5 text-success hover:bg-success/10 border-success/30"
+                              className="flex-1 gap-1.5 text-success hover:bg-success/10 border-success/30"
                               onClick={() => handleApproveBid(bid._id)}
                             >
                               <Check className="h-3.5 w-3.5" /> Approve
                             </Button>
                             <Button
                               size="sm" variant="outline"
-                              className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+                              className="flex-1 gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
                               onClick={() => handleRejectBid(bid._id)}
                             >
                               <X className="h-3.5 w-3.5" /> Reject
                             </Button>
-                          </div>
-                        )}
-                        {bid.adminStatus !== "pending_admin" && (
-                          <div className="shrink-0">
-                            {bid.adminStatus === "approved"
-                              ? <CheckCircle2 className="h-5 w-5 text-success" />
-                              : <X className="h-5 w-5 text-destructive" />
-                            }
-                          </div>
+                          </>
                         )}
                       </div>
-
-                      {/* Mobile action buttons — full width row below content */}
-                      {bid.adminStatus === "pending_admin" && (
-                        <div className="flex gap-2 mt-3 sm:hidden">
-                          <Button
-                            size="sm" variant="outline"
-                            className="flex-1 gap-1.5 text-success hover:bg-success/10 border-success/30"
-                            onClick={() => handleApproveBid(bid._id)}
-                          >
-                            <Check className="h-3.5 w-3.5" /> Approve
-                          </Button>
-                          <Button
-                            size="sm" variant="outline"
-                            className="flex-1 gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
-                            onClick={() => handleRejectBid(bid._id)}
-                          >
-                            <X className="h-3.5 w-3.5" /> Reject
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
