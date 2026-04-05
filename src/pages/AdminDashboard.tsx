@@ -176,8 +176,19 @@ const AdminDashboard = () => {
   const [payments,         setPayments]         = useState<AdminPayment[]>([]);
   const [loadingPayments,  setLoadingPayments]  = useState(false);
 
-  type AdminNotif = { _id: string; type: string; message: string; read: boolean; createdAt: string; projectTitle: string; actorName: string; };
+  type AdminNotif = { _id: string; type: string; message: string; read: boolean; createdAt: string; projectTitle: string; actorName: string; actorId?: string; };
+
+  type BidderProfile = {
+    _id: string; name: string; email: string; avatar?: string; role: string;
+    bio?: string; skills?: string[]; experienceLevel?: string; yearsOfExperience?: number;
+    portfolioUrl?: string; linkedinUrl?: string; availability?: string;
+    rating?: number; completedProjects?: number; createdAt: string;
+    totalBids: number; activeProjects: number;
+  };
   const [adminNotifs,        setAdminNotifs]        = useState<AdminNotif[]>([]);
+  const [bidderProfile,      setBidderProfile]      = useState<BidderProfile | null>(null);
+  const [profileModalOpen,   setProfileModalOpen]   = useState(false);
+  const [loadingProfile,     setLoadingProfile]     = useState(false);
   const [loadingNotifs,      setLoadingNotifs]      = useState(false);
 
   const [walletUsers,        setWalletUsers]        = useState<WalletUser[]>([]);
@@ -274,6 +285,22 @@ const AdminDashboard = () => {
       await api.patch(`/admin/notifications/${id}/read`);
       setAdminNotifs(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
     } catch { /* ignore */ }
+  };
+
+  const viewBidderProfile = async (actorId: string, notifId: string) => {
+    setLoadingProfile(true);
+    setProfileModalOpen(true);
+    setBidderProfile(null);
+    try {
+      const data = await api.get<BidderProfile>(`/admin/users/${actorId}`);
+      setBidderProfile(data);
+      // auto-mark notification as read
+      markNotifRead(notifId);
+    } catch {
+      setProfileModalOpen(false);
+    } finally {
+      setLoadingProfile(false);
+    }
   };
 
   const markAllRead = async () => {
@@ -1487,10 +1514,20 @@ const AdminDashboard = () => {
                             {n.projectTitle && (
                               <p className="text-xs text-primary mt-0.5 font-medium truncate">{n.projectTitle}</p>
                             )}
-                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                            </p>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                              {n.type === "new_bid" && n.actorId && (
+                                <button
+                                  onClick={() => viewBidderProfile(n.actorId!, n._id)}
+                                  className="flex items-center gap-1 rounded-md border border-yellow-500/30 bg-yellow-500/5 px-2 py-0.5 text-[11px] font-semibold text-yellow-600 hover:bg-yellow-500/10 transition-colors"
+                                >
+                                  <Eye className="h-3 w-3" /> View Profile
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <button
                             onClick={() => markNotifRead(n._id)}
@@ -1518,10 +1555,20 @@ const AdminDashboard = () => {
                             {n.projectTitle && (
                               <p className="text-xs text-primary mt-0.5 font-medium truncate">{n.projectTitle}</p>
                             )}
-                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                            </p>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(n.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                              {n.type === "new_bid" && n.actorId && (
+                                <button
+                                  onClick={() => viewBidderProfile(n.actorId!, n._id)}
+                                  className="flex items-center gap-1 rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                >
+                                  <Eye className="h-3 w-3" /> View Profile
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <span className="shrink-0 flex items-center gap-1 text-[11px] text-muted-foreground">
                             <CheckCircle2 className="h-3 w-3 text-green-500" /> Seen
@@ -1537,6 +1584,138 @@ const AdminDashboard = () => {
 
         </div>
       </main>
+
+      {/* ── Bidder Profile Modal ── */}
+      {profileModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setProfileModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                  <Users className="h-4 w-4 text-yellow-500" />
+                </div>
+                <p className="font-semibold text-sm text-foreground">Bidder Profile</p>
+              </div>
+              <button
+                onClick={() => setProfileModalOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 max-h-[75vh] overflow-y-auto space-y-5">
+              {loadingProfile ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 rounded-2xl bg-muted animate-pulse shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
+                      <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
+                    </div>
+                  </div>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="h-3 bg-muted rounded animate-pulse w-full" />
+                  ))}
+                </div>
+              ) : bidderProfile ? (
+                <>
+                  {/* Avatar + Name */}
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16 rounded-2xl border-2 border-border">
+                      <AvatarImage src={bidderProfile.avatar} />
+                      <AvatarFallback className="rounded-2xl bg-primary/10 text-primary font-bold text-xl">
+                        {bidderProfile.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-lg text-foreground leading-tight">{bidderProfile.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{bidderProfile.email}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] capitalize">{bidderProfile.role}</Badge>
+                        {bidderProfile.experienceLevel && (
+                          <Badge variant="outline" className="text-[10px] capitalize">{bidderProfile.experienceLevel}</Badge>
+                        )}
+                        {bidderProfile.availability && (
+                          <Badge variant="outline" className="text-[10px] text-green-600 border-green-500/30 bg-green-500/5">{bidderProfile.availability}</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+                      <p className="text-xl font-extrabold text-foreground">{bidderProfile.rating?.toFixed(1) ?? "—"}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Rating</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+                      <p className="text-xl font-extrabold text-foreground">{bidderProfile.completedProjects ?? 0}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Completed</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 text-center">
+                      <p className="text-xl font-extrabold text-foreground">{bidderProfile.totalBids}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Total Bids</p>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  {bidderProfile.bio && (
+                    <div className="rounded-xl border border-border bg-muted/20 p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">About</p>
+                      <p className="text-sm text-foreground leading-relaxed">{bidderProfile.bio}</p>
+                    </div>
+                  )}
+
+                  {/* Skills */}
+                  {bidderProfile.skills && bidderProfile.skills.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Skills</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {bidderProfile.skills.map(s => (
+                          <span key={s} className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Links */}
+                  {(bidderProfile.portfolioUrl || bidderProfile.linkedinUrl) && (
+                    <div className="flex gap-3">
+                      {bidderProfile.portfolioUrl && (
+                        <a href={bidderProfile.portfolioUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                          <ArrowRight className="h-3.5 w-3.5" /> Portfolio
+                        </a>
+                      )}
+                      {bidderProfile.linkedinUrl && (
+                        <a href={bidderProfile.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                          <ArrowRight className="h-3.5 w-3.5" /> LinkedIn
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Member since */}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    Member since {new Date(bidderProfile.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
